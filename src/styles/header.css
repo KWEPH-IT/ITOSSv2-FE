@@ -1,0 +1,32 @@
+.app-header {
+    width: 100%; /* span full viewport width */
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff; /* or your header color */
+    margin-left: 10px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 100; /* keeps it above content */
+
+}
+
+.app-sider{
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.capitalize-text {
+    text-transform: capitalize;
+}
+
+.app-sider .ant-menu-item .app-sider-icon,
+.app-sider .ant-menu-submenu-title .app-sider-icon {
+    color: #fa8c16 !important;
+    font-size: 18px !important;
+}
+
+.app-sider .ant-menu-title-content {
+    font-weight: 600; /* semi-bold */
+    color: #000;
+}

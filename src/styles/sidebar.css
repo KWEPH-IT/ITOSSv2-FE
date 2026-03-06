@@ -1,0 +1,141 @@
+/* Sidebar container */
+.modern-sider {
+    background: #ffffff !important;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    border-right: 1px solid #f0f0f0;
+  }
+  
+  /* Logo area */
+  .logo-container-sidebar {
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .sidebar-logo {
+    height: 60px;
+    width: auto;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-logo.collapsed {
+    height: 30px;
+  }
+  
+  /* Menu base */
+  .modern-menu {
+    background: transparent !important;
+    padding: 10px 12px;
+    font-weight: 500;
+    color: #002b5c;
+    transition: all 0.3s ease;
+  }
+  
+  /* Menu item base */
+  .ant-menu-item,
+  .ant-menu-submenu-title {
+    border-radius: 10px !important;
+    margin: 6px 0 !important;
+    transition: all 0.25s ease-in-out !important;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Smooth gradient hover background */
+  .ant-menu-item::before,
+  .ant-menu-submenu-title::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #d9e8ff 0%, #e8f1ff 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 10px;
+    z-index: -1;
+  }
+  
+  /* Hover effect */
+  .ant-menu-item:hover::before,
+  .ant-menu-submenu-title:hover::before {
+    opacity: 1;
+  }
+  
+  .ant-menu-item:hover,
+  .ant-menu-submenu-title:hover {
+    color: #003366 !important; /* darker text for readability */
+    transform: translateX(4px);
+  }
+  
+  /* Selected (active) item */
+  .ant-menu-item-selected {
+    background: linear-gradient(90deg, #1677ff 0%, #3d9aff 100%) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(22, 119, 255, 0.25);
+    transform: translateX(4px);
+  }
+  
+  .ant-menu-item-selected::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    border-radius: 10px;
+    filter: brightness(1.1);
+    z-index: -1;
+  }
+  
+  /* Icon color transitions */
+  .app-sider-icon {
+    font-size: 18px;
+    color: #1677ff;
+    transition: color 0.25s ease, transform 0.25s ease;
+  }
+  
+  .ant-menu-item:hover .app-sider-icon,
+  .ant-menu-submenu-title:hover .app-sider-icon {
+    color: #1677ff;
+    transform: scale(1.1);
+  }
+  
+  .ant-menu-item-selected .app-sider-icon {
+    color: white !important;
+  }
+  
+  /* Submenu arrow */
+  .ant-menu-submenu-arrow {
+    color: #1677ff !important;
+    transition: color 0.2s ease;
+  }
+  
+  /* Collapsed menu tooltip */
+  .ant-menu-inline-collapsed-tooltip {
+    background-color: #f0f6ff !important;
+    color: #1677ff !important;
+  }
+  
+  /* Smooth transitions overall */
+  .ant-menu,
+  .ant-menu-item,
+  .ant-menu-submenu-title {
+    transition: all 0.3s ease-in-out !important;
+  }
+  
+  /* Scrollbar */
+  .modern-sider::-webkit-scrollbar {
+    width: 6px;
+  }
+  .modern-sider::-webkit-scrollbar-thumb {
+    background: #a3c4ff;
+    border-radius: 3px;
+  }
+  .modern-sider::-webkit-scrollbar-thumb:hover {
+    background: #1677ff;
+  }
+  

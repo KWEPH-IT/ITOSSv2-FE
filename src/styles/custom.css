@@ -1,0 +1,14 @@
+html, body {
+    overflow-x: hidden;
+  }
+
+.assignment-card {
+  position: relative;
+}
+
+@media (min-width: 1200px) {
+  .assignment-card {
+    position: sticky;
+    top: 24px;
+  }
+}

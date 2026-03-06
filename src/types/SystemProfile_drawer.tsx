@@ -1,0 +1,21 @@
+export interface SystemProfileProps{
+    SystemId: number,
+    SystemName : string,
+    SystemAlias : string,
+    SourceCodeServer : string,
+    DBServerName : string,
+    DBName : string,
+    DBUsername : string,
+    DBPassword : string,
+    DBType : string,
+    DBTableIdentifier : string,
+    DBPasswordColName : string,
+    DBStatusColName : string,
+    FieldsToRemove : string,
+    Remarks : string,
+    Status : number,
+    CreatedBy : string,
+    DateCreated: string,
+    ModifiedBy : string,
+    DateModified : string
+}

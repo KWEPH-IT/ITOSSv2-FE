@@ -1,0 +1,21 @@
+export interface AssetRequisitionProps{
+    SystemId: number, 
+    SerialNumber: string,
+    AssetTag: string,
+    Model: string,
+    Existing: number,
+    Brand: string, 
+    EType: string,
+    Tagged: number, 
+    ItemDescription: string,
+    AccountName: string, 
+    Company: string, 
+    Classification: string, 
+    Cost: number, 
+    DateAcquired: string,
+    Assigned: string,
+    EndOfWarranty: string,
+    DateChecked: string, 
+    ModifiedBy: string,
+    DateModified: string
+}
