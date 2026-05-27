@@ -1,36 +1,37 @@
 import React, { useState } from 'react'
-import axios from 'axios';
-import { Layout, Menu, Avatar, Dropdown, message, Button, Space, Typography, Divider } from "antd";
-import { UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined, BellFilled } from "@ant-design/icons";
+import { Link } from 'react-router-dom';
+import { Layout, Avatar, Dropdown, message, Button, Space, Typography, Divider } from "antd";
+import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { Loader } from '../components/Loader'; 
 import "../styles/header.css"
-import { formatName } from '../utils/stringFormat';
-
-
-
+import { formatName, getInitials } from '../utils/stringFormat';
+import API from '../api/api';
+import { handleLoggedAction } from '../utils/Logger';
 const { Header } = Layout;
 
 interface HeaderProps {
   collapsed: boolean;
   setCollapsed: (value:boolean) =>void;
+  userId: string;
   userName: string;
+  dept: string;
 }
 
-const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userName}) => {
+const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, userName, dept}) => {
   const displayName = formatName(userName);
-  const API_URL = import.meta.env.VITE_API_URL; 
   const [isLoading, setIsLoading] = useState(false);
 
 
   const handleLogout = async() =>{
     try{
       setIsLoading(true);
-      await axios.post(`${API_URL}/auth/logout`, {}, {withCredentials: true})
+      await API.post(`/auth/logout`);
       message.success("Logged out successfully!");
 
       window.location.href = '/';
     }
-    catch{
+    catch(error){
+      console.error(error)
       message.error("Unable to log out!")
     }
     finally{
@@ -53,15 +54,26 @@ const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userName}) =
 
   if (isLoading) return <Loader/> 
   return (
-    <Header className="app-header">
-      <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px' }}>
-      <Button
-          type="text"
-          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          onClick={() => setCollapsed(!collapsed)}
-          style={{ fontSize: '18px', width: 40, height: 40 }}
-        />
-      </div>
+    <Header className={dept === 'IT' ? 'app-header' : 'user-app-header'}>
+      
+          <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+          { dept === 'IT' ? 
+            (
+              <Button
+                  type="text"
+                  icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                  onClick={() => setCollapsed(!collapsed)}
+                  style={{ fontSize: '18px', width: 40, height: 40 }}
+                />
+
+            )
+            :
+            <Link to="/home-redirect">
+              <span style={{ color: "#FFF", fontSize:"35px", fontWeight: 700}}> ITOSS v2 </span>
+            </Link>
+          }
+          </div>
+       
 
       
 
@@ -69,7 +81,10 @@ const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userName}) =
       
       <div style={{ display: "flex", alignItems: "center", gap: "16px", padding: "50px" }}>
         {/* Bell icon */}
-        <BellFilled style={{ fontSize: 18, cursor: "pointer", color: "#8c8c8c" }} />
+        <Link to="/ticketList" onClick={() => handleLoggedAction(userId, "REQUEST OVERVIEW", "Clicked list of requests")}>
+          <Button type='link' style={{color:dept === 'IT' ? '#000' : '#FFFF', fontWeight: 600 }}>Requests</Button>
+        </Link>
+        {/* <BellFilled style={{ fontSize: 18, cursor: "pointer", color: "#8c8c8c" }} /> */}
 
         {/* Separator line */}
         <Divider type="vertical" style={{ height: "20px", margin: 0 }} />
@@ -80,10 +95,11 @@ const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userName}) =
         >
           <Space style={{ cursor: "pointer" }}>
             <Avatar
-              style={{ backgroundColor: "#fa8c16", marginRight: "10px" }}
-              icon={<UserOutlined />}
-            />
-            <Typography.Text>{displayName}</Typography.Text>
+              style={{ backgroundColor: dept === 'IT' ? '#fa8c16' : '#FFFF', color:dept === 'IT' ? '#FFF' : '#000', fontWeight: 600, marginRight: "10px" }}
+            >
+                {getInitials(displayName)}
+            </Avatar>
+            <Typography.Text style={{color:dept === 'IT' ? '#000' : '#FFFF', fontWeight: 600 }}>{displayName}</Typography.Text>
           </Space>
         </Dropdown>
       </div>

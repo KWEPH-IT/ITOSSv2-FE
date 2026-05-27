@@ -1,6 +1,12 @@
-html, body {
+html, body, #root {
     overflow-x: hidden;
+    height: 100%;
   }
+
+  .ant-layout {
+    min-height: 100vh;
+  }
+  
 
 .assignment-card {
   position: relative;

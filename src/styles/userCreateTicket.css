@@ -1,0 +1,102 @@
+.incident-page {
+    min-height: 100vh;
+    padding: 45px;
+    background: #f7f9fc;
+  }
+  
+  /* HEADER */
+  .incident-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  
+  .incident-header p {
+    color: #6b7280;
+    margin-bottom: 30px;
+  }
+  
+  /* CARD */
+  .form-card {
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  }
+  
+  /* SIDE CARD */
+  .side-card {
+    border-radius: 16px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    margin: 10px;
+  }
+  
+  /* FORM */
+  .form-section {
+    margin-bottom: 20px;
+  }
+  
+  .form-section label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #374151;
+    letter-spacing: 0.7;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 16px;
+  }
+  
+ 
+
+  /* BUTTONS */
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 30px;
+  }
+  
+  .form-actions .ant-btn {
+    border-radius: 999px;
+    height: 42px;
+    padding: 0 24px;
+  }
+  
+  .form-actions .ant-btn-primary {
+    background: linear-gradient(135deg, #1677ff, #4096ff);
+    border: none;
+    box-shadow: 0 6px 16px rgba(22,119,255,0.3);
+  }
+
+
+  .modern-timeline .ant-timeline-item-tail {
+    border-left: 2px dashed #e5e7eb; /* soft gray line */
+  }
+
+
+  .timeline-dot {
+    font-size: 14px;
+    color: #1677ff;
+  }
+  
+  /* Item container */
+  .timeline-item {
+    padding-bottom: 8px;
+  }
+  
+  /* Title */
+  .timeline-title {
+    font-weight: 600;
+    color: #1f1f1f;
+    font-size: 14px;
+  }
+  
+  /* Subtext */
+  .timeline-sub {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+  }
+  

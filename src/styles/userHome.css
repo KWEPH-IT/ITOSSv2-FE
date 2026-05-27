@@ -1,0 +1,92 @@
+
+.hero {
+    position: relative; /* important for layering the waves */
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    /* padding: 0 20px; */
+    line-height: 0px;
+    
+    /* Background image */
+    /*background-image: url('../../public/images/bg.jpg');  replace with your image path */
+    background-image: url('../../public/images/bghd.png');
+    background-size: cover;       /* cover the entire div */
+    background-position: center;  /* center the image */
+    background-repeat: no-repeat; /* prevent tiling */
+}
+
+  .hero h1 {
+    margin-top: 0px;
+    font-size: 72px;
+    font-weight: 600;
+    color:#FFF;
+  }
+  
+  .subtitle {
+    font-size: 18px;
+    opacity: 0.9;
+    max-width: 700px;
+    color:#FFF;
+  }
+  
+  /* QUICK ACTIONS */
+  /* .quick-actions .action-card {
+    text-align: center;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    max-width: 500px;
+    line-height: 7px;
+    margin: 0 auto;
+  } */
+
+
+  .action-card {
+    text-align: center;
+    line-height: 7px;
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  
+    color: #1f1f1f;
+  }
+  
+  .action-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+  }
+  
+  .action-icon {
+    font-size: 28px;
+    color: #1677ff;
+    margin-bottom: 10px;
+  }
+
+  .action-card h3 {
+    color: #1f1f1f;
+  }
+  
+  .action-card p {
+    color: #666;
+  }
+  
+  .action-icon {
+    color: #1677ff;
+  }
+  
+  /* GLASS CARDS */
+  .glass-card {
+    border-radius: 16px;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+  }
+  
+  .success {
+    background: rgba(82, 196, 26, 0.15);
+  }

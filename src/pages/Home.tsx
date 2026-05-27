@@ -18,8 +18,8 @@ const Home = () => {
 
   return (
     <MainLayout title="Dashboard">
-      <h2>Welcome, {userData.EmployeeName}!</h2>
-      <p>Email: {userData.EmailAddress}</p>
+      <h2>Welcome, {userData.FullName}!</h2>
+      <p>Department: {userData.Department}</p>
     </MainLayout>
   );
   

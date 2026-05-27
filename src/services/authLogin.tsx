@@ -1,5 +1,6 @@
 import { message } from "antd";
 import API from "../api/api"; 
+import { handleLoggedAction } from "../utils/Logger";
 
 const API_URL = import.meta.env.VITE_SERVER_API_URL
 
@@ -10,13 +11,17 @@ export const handleLogin = async(
 ) => {
     try {
         const response  = await API.post(`${API_URL}/auth/login`, values);
+
         const user = response.data.user
+        localStorage.setItem("user", user)
         setUserId(user)
         message.success(response.data.message)
-
-        navigate("/home")
+        handleLoggedAction(user, 'LOGIN SUCCESS', '')
+        
+        navigate("/home-redirect");
+       
     }
-    catch(error){
+    catch(error:any){
         message.error("Invalid user credentials!")
     }
 }

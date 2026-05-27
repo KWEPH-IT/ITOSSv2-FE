@@ -85,11 +85,11 @@ const SystemProfileTable = ({ onAddUserClick, onEditClick, shouldRefresh }: { on
             const StatusText  = sys.Status === 1 ? 'active' : 'inactive';
             
             return (
-            (sys.SystemName ? sys.SystemName.toLowerCase() : '').includes(value) ||
-            (sys.SystemAlias ? sys.SystemAlias.toLowerCase() : '').includes(value) ||
-            (sys.DBType ? sys.DBType.toLowerCase() : '').includes(value) ||
-            (sys.Status ? sys.Status.toString().toLowerCase() : '').includes(value) ||
-            StatusText.includes(value)
+                (sys.SystemName ? sys.SystemName.toLowerCase() : '').includes(value) ||
+                (sys.SystemAlias ? sys.SystemAlias.toLowerCase() : '').includes(value) ||
+                (sys.DBType ? sys.DBType.toLowerCase() : '').includes(value) ||
+                (sys.Status ? sys.Status.toString().toLowerCase() : '').includes(value) ||
+                StatusText.includes(value)
             );
         });
         setFilterSystems(filtered);
