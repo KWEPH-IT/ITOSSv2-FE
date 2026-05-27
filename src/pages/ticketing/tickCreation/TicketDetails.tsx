@@ -150,6 +150,7 @@ const TicketDetails = () => {
   return (
     <MainLayout title="">
         <div className="grid-container">
+        <div className="grid-wrapper">
             <Card className="card">
                 {/* TOP SECTION */}
                 <Row justify="space-between" align="top">
@@ -425,6 +426,7 @@ const TicketDetails = () => {
             />
 
             </Card>
+        </div>
         </div>
     </MainLayout>
   )

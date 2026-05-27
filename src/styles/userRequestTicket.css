@@ -33,15 +33,29 @@
     color:#FFF;
   }
 
-  .table-grid-container {
+  /* .table-grid-container {
     max-width: 1600px;
-    margin: 0 auto;         /* Centers the grid */
-    margin-top: -80px;      /* PULLS the cards UP into the hero section */
+    width: 100%;
+    margin: 0 auto;        
+    margin-top: -80px;      
     padding: 5px;
     display: grid;
     gap: 24px;
-    position: relative;     /* Ensures it stays on top of the background */
+    position: relative;     
     z-index: 10;
+  } */
+
+  .table-grid-container {
+    width: 100%;
+    padding: 16px;
+    display: flex;
+    justify-content: center; 
+    margin-top: -80px;
+  }
+
+  .table-grid-wrapper {
+    width: clamp(1024px, 90%, 1600px);
+    margin: 0 auto;
   }
 
   .table{

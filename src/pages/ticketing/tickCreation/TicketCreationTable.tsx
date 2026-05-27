@@ -88,7 +88,7 @@ const TicketCreationTable = () => {
         </div>
 
         <div className="table-grid-container">
-         
+          <div className="table-grid-wrapper">
           <SearchContainer >
             <SearchInput placeholder="Search by Ticket Number, Request Type" style={{ width: "400px" }} suffix={<SearchOutlined />} value={search} onChange={handleSearch}></SearchInput>
             <Segmented
@@ -124,11 +124,8 @@ const TicketCreationTable = () => {
               rowKey="TicketNumber"
             ></Table>
           </Row>
+          </div>
         </div>
-
-       
-
-        
     </MainLayout>
   )
 }
