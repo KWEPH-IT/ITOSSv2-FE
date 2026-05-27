@@ -1,5 +1,7 @@
 import styled from "styled-components";
-import { Input, Button, Form, Select, DatePicker } from "antd";
+import { Input, InputNumber, Button, Form, Select, DatePicker, TimePicker } from "antd";
+
+const { TextArea } = Input;
 
 
 export const Container = styled.div`
@@ -44,6 +46,16 @@ export const StyledInput = styled(Input)`
     letter-spacing: 0.7px;
 `
 
+export const StyledNumber = styled(InputNumber)`
+    font-size: 12px;
+    letter-spacing: 0.7px;
+`
+
+export const StyledTextArea = styled(TextArea)`
+    font-size: 12px;
+    letter-spacing: 0.7px;
+`
+
 export const StyledSelect = styled(Select)`
   font-size: 12px !important;
 
@@ -63,6 +75,14 @@ export const StyledSelect = styled(Select)`
 
 
 export const StyledDatePicker = styled(DatePicker)`
+    font-size: 12px !important;
+    letter-spacing: 0.7px;
+    input {
+        font-size: 12px !important; /* Ensures the text inside also resizes */
+    }
+`
+
+export const StyledTimePicker = styled(TimePicker)`
     font-size: 12px !important;
     letter-spacing: 0.7px;
     input {

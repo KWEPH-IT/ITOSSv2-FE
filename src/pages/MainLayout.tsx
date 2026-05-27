@@ -19,8 +19,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({title, children}) => {
   const currentYear = new Date().getFullYear();
   const [collapsed, setCollapsed] = useState(false)
   const { userId }  = useAuth();
-   // Prevent API calls if userId is null
-   const { userData, loading } = getUserData(userId);
+  
+  // Prevent API calls if userId is null
+  const { userData, loading } = getUserData(userId);
 
    if (!userId) {
      return <p>User not logged in. Redirect to login.</p>;
@@ -32,13 +33,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({title, children}) => {
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* Sidebar stays on the left */}
-      <Sidebar collapsed={collapsed} /> 
+      { userData.Department == 'IT' ?  <Sidebar collapsed={collapsed} /> : null }
+     
 
       {/* Right side contains Header + Content + Footer */}
       <Layout >
-        <AppHeader collapsed={collapsed} setCollapsed={setCollapsed} userName={userData.EmployeeName} />
 
-        <Content style={{ padding: "0 24px 24px" }}>
+      <AppHeader collapsed={collapsed} setCollapsed={setCollapsed} userId={userId} userName={userData.FullName} dept={userData.Department} />
+      <Content style={ userData.Department === 'IT'? { padding: "0 24px 24px" } : undefined}>
+        {userData.Department === 'IT' && (
           <Breadcrumb
             style={{ margin: "30px 0", fontSize: "14px", letterSpacing: "0.7px" }}
             items={[
@@ -46,10 +49,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({title, children}) => {
               { title: title }
             ]}
           />
-          <div style={{ padding: 24, minHeight: 280, background: "#fff" }}>
-            {children}
-          </div>
-        </Content>
+        )}
+
+      <div
+        style={
+          userData.Department === 'IT'
+            ? { padding: 24, minHeight: 280, background: "#fff" }
+            : undefined
+        }
+      >
+        {children} {/* ✅ ALWAYS render children */}
+      </div>
+      </Content>
+     
+      
+        
 
         <Footer style={{ textAlign: "center" }}>
           © {currentYear} KINTETSU WORLD EXPRESS (PHILIPPINES) INC.

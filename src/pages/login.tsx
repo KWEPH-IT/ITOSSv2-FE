@@ -5,6 +5,7 @@ import { handleLogin } from '../services/authLogin';
 import { useAuth } from '../context/AuthContext';
 import "../styles/login.css"
 import { useState } from 'react';
+import { Loader } from '../components/Loader';
 
 const { Title } = Typography
 
@@ -18,6 +19,8 @@ const Login = () => {
     await handleLogin(values, navigate, setUserId)
     setLoading(false);
   }
+
+  if (loading) return <Loader/>
 
   return (
     <div className='login'>

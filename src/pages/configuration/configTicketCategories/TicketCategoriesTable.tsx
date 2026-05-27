@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
+import { SearchOutlined, PlusOutlined, EditOutlined } from "@ant-design/icons";
 import { Container, SearchInput , NormalButton} from '../../../components/StyledComponents'
-import { Row, Col, Segmented, Space } from 'antd'
+import { Row, Col, Segmented, Space, Tag, Button } from 'antd'
 import { StyledTable } from '../../../components/StyledTable';
 import { ColumnsType } from 'antd/es/table';
 import { TicketCategProps } from '../../../types/TicketsCateg_drawer';
@@ -10,6 +10,31 @@ import { Loader } from '../../../components/Loader';
 
 const TicketCategoriesTable = ({ onAddUserClick, onEditClick, shouldRefresh} : { onAddUserClick: () => void, onEditClick: (record: TicketCategProps) => void, shouldRefresh: number}) => {
     const { categ, loading, refetch } = useTicketCategs() 
+
+
+    const buildPath = (
+        item: TicketCategProps,
+        allCategories: TicketCategProps[]
+        ): JSX.Element[] => {
+        const path: TicketCategProps[] = [item];
+        let currentParentId = item.ParentId;
+
+        while (currentParentId) {
+            const parent = allCategories.find((c) => c.SystemId === currentParentId);
+            if (!parent) break;
+
+            path.unshift(parent);
+            currentParentId = parent.ParentId;
+        }
+
+        const colors = ["yellow", "blue", "green"];
+
+        return path.map((c, index) => (
+            <Tag key={c.SystemId} color={colors[index % colors.length]}>
+                {c.Name}
+            </Tag>
+        ));
+    };
     
 
     const columns : ColumnsType<TicketCategProps> = [
@@ -17,16 +42,19 @@ const TicketCategoriesTable = ({ onAddUserClick, onEditClick, shouldRefresh} : {
             title: "Category Name", dataIndex: "Name", key: "Name"
         },
         {
-            title: "Parent ID", dataIndex: "ParentId", key: "ParentId"
-        },
-        {
-            title: "Level", dataIndex: "HierarchyLevel", key: "HierarchyLevel"
+            title: "Level", dataIndex: "HierarchyLevel", key: "HierarchyLevel", render: (_, record: TicketCategProps) => buildPath(record, categ)
         }, 
         {
-            title: "Approvers", dataIndex: "Approvers", key: "Approvers"
-        },
-        {
             title: "Status", dataIndex: "Status", key: "Status"
+        }, 
+        {
+            title: 'Actions',
+            key: 'actions', 
+            render: (_: any, record: TicketCategProps) => (
+                <Space size="middle">
+                    <Button type="link" size="small" onClick={() => onEditClick(record)}><EditOutlined></EditOutlined></Button>
+                </Space>
+            )
         }
     ]
 

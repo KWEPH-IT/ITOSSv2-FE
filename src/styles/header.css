@@ -1,15 +1,27 @@
 .app-header {
     width: 100%; /* span full viewport width */
     padding: 0 16px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: #fff; /* or your header color */
     margin-left: 10px;
-    background: #fff;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     z-index: 100; /* keeps it above content */
 
+}
+
+.user-app-header {
+    width: 100%; /* span full viewport width */
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0F218B; /* or your header color */
+    margin-left: 0px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 100; /* keeps it above content */
 }
 
 .app-sider{
@@ -30,3 +42,5 @@
     font-weight: 600; /* semi-bold */
     color: #000;
 }
+
+

@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './pages/login';
 import ProtectedRoute from './routes/ProtectedRoute';
+import HomeRedirect from './pages/HomeRedirect';
 import Home from './pages/Home';
+import UserHome from './pages/UserHome';
 import SystemProfilePage from './pages/configuration/configSystemProfile/SystemProfilePage';
 import DBColumnsPage from './pages/configuration/configDBColumns/DBColumnsPage';
 import DBColumnsDetails from './pages/configuration/configDBColumns/DBColumnsDetails';
@@ -11,6 +13,10 @@ import GroupEmailMember from './pages/configuration/configGroupEmails/GroupEmail
 import AssetRequisitionPage from './pages/inventory/invAssetRequsition/AssetRequisitionPage';
 import { EquipmentInvPage } from './pages/inventory/invEquipment/EquipmentInvPage';
 import TicketCategoriesPage from './pages/configuration/configTicketCategories/TicketCategoriesPage';
+import TicketPage from './pages/ticketing/tickCreation/TicketPage';
+import TicketCreationForm from './pages/ticketing/tickCreation/TicketCreationForm';
+import TicketCreationTable from './pages/ticketing/tickCreation/TicketCreationTable';
+import TicketDetails from './pages/ticketing/tickCreation/TicketDetails';
 
 const App = () => {
   return (
@@ -20,7 +26,9 @@ const App = () => {
         <Route path="/" element={<Login/>} />
 
         {/* Protected Routes */}
-        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>}/>
+        <Route path='/home-redirect' element={<ProtectedRoute><HomeRedirect /></ProtectedRoute> } />
+        <Route path="/user-home" element={<ProtectedRoute><UserHome /></ProtectedRoute>}/>
+        <Route path="/it-home" element={<ProtectedRoute><Home /></ProtectedRoute>}/>
         
         {/* Configuration */}
         <Route path="/configSystemProfile" element={<ProtectedRoute><SystemProfilePage /></ProtectedRoute>}/>
@@ -34,6 +42,14 @@ const App = () => {
         {/* Inventory */}
         <Route path="/invAssetReq" element={<ProtectedRoute><AssetRequisitionPage /></ProtectedRoute>} />
         <Route path="/invEquipment" element={<ProtectedRoute><EquipmentInvPage /></ProtectedRoute>} />
+
+
+        {/* Ticket */}
+        <Route path="/ticketCreation" element={<ProtectedRoute><TicketPage /></ProtectedRoute>} />
+        <Route path="/createRequest" element={<ProtectedRoute><TicketCreationForm /></ProtectedRoute>} />
+        <Route path="/ticketList" element={<ProtectedRoute><TicketCreationTable /></ProtectedRoute>} />
+        <Route path="/ticketDetails/:tn" element={<ProtectedRoute><TicketDetails /></ProtectedRoute>}/>
+      
       </Routes>
     </Router>
   )

@@ -40,6 +40,15 @@ const items = [
       { key: "/invEquipment", label: "Equipment" },
     ],
   },
+
+  {
+    key: "ticket",
+    icon: <TagsFilled  className="app-sider-icon" />,
+    label: "Ticket",
+    children: [
+      { key: "/ticketCreation", label: "Ticket Creation" },
+    ],
+  },
 ];
 
 interface SidebarProps {

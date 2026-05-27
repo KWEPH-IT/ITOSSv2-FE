@@ -1,0 +1,20 @@
+.grid-container {
+    max-width: 1600px;
+    margin: 0 auto;         /* Centers the grid */
+    margin-top: 20px;
+    padding: 5px;
+    display: grid;
+    gap: 24px;
+    position: relative;     /* Ensures it stays on top of the background */
+    z-index: 10;
+  }
+
+.card {
+    background: rgba(255, 255, 255, 0.8); /* Glassmorphism start */
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 3px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Soft shadow for depth */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    line-height: 7px;
+}
