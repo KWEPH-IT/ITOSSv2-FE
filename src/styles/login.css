@@ -1,36 +1,23 @@
-
-
-
 .login{
-    background-image: url("../images/ITOSS-bg.jpg"); /* Path to your image */
-    background-size: cover;  /* Cover the whole page */
+    background-image: url("../images/ITOSS-bg.jpg");
+    background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    height: 100vh;  /* Full-screen height */
+    height: 100vh;
 }
-
 .blue-gradient {
     background: rgb(255,255,255);
     background: linear-gradient(71deg, rgba(255,255,255,1) 55%, rgba(0,92,170,1) 100%);
 }
-
 .login-container{
     height: 5vh;
 }
-
-.kwelogo{
-    padding-top:20px;
-    margin-left:320px;
-    width:327px;
+.kwelogo, .systemlogo {
+    display: block;
+    margin: 8px auto;
+    max-width: 50%;
+    height: auto;
 }
-
-.systemlogo {
-    text-align:left;
-    margin-left:77px;
-    padding-top:10px;
-    width: 400px;
-}
-
 .login-container {
     display: flex;
     justify-content: center;
@@ -38,29 +25,24 @@
     height: 30vh;
     /* background-color: #f0f2f5; */
 }
-
-/* Styling the card */
 .login-card {
     background: #323232;
     opacity: .89;
-    padding:25px;
+    padding:6px;
     border-radius: 25px;
     width:500px !important;
-    max-height:350px;   
+    max-height:350px;
 }
-
 .login-title {
     text-align: center !important;
-    color: #FFF !important; 
+    color: #FFF !important;
     letter-spacing: 0.7px;
 }
-
 .input-container {
     display: flex;
     align-items: center;
     width: 100%;
 }
-
 .icon-box {
     background-color: red;
     padding: 10px;
@@ -70,12 +52,10 @@
     align-items: center;
     justify-content: center;
 }
-  
 .input-icon {
     color: white;
     font-size: 32px;
 }
-
 .custom-input {
     flex: 1;
     border-radius: 0;
@@ -84,15 +64,12 @@
     height: 50px;
     width:270px;
 }
-
-
 .button-container {
     display: flex;
-    justify-content: center;  /* Centers horizontally */
-    align-items: center;      /* Centers vertically (if parent has height) */
+    justify-content: center;
+    align-items: center;
     margin-top: 20px;
 }
-
 .login-button {
     border-radius: 50px !important;
     width: 150px !important;
@@ -103,10 +80,49 @@
     border: 1px #FFF solid;
     color: #FFF;
 }
-
 .login-button:hover {
     background-color: red !important;
     border: 1px red solid !important;
     color: #FFF !important;
-
 }
+
+@media (max-width: 700px) {
+    .login {
+        height: auto;
+        min-height: 100vh; 
+        display: flex;
+        flex-direction: column;
+    }
+    .login-container {
+        height: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .login-card {
+        width: 90% !important;
+        max-width: 400px;
+        height: auto;
+        max-height: none;
+    }
+    .kwelogo, .systemlogo {
+        max-width: 55%;
+        margin: auto;
+    }
+}
+
+@media (max-height: 500px) {
+    .login {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto; 
+    }
+    .kwelogo, .systemlogo {
+        max-width: 45%;
+    }
+    .login-container {
+        height: auto;
+        align-items: flex-start;
+    }
+}
+

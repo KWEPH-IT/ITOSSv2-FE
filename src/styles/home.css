@@ -1,0 +1,14 @@
+.welcome-container {
+  padding: 10px;
+  overflow-wrap: break-word;
+}
+.welcome-container h2 {
+  font-size: clamp(18px, 5vw, 28px);
+  margin: 0 0 10px 0;
+  font-weight: bold;
+}
+.welcome-container p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
