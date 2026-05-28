@@ -411,7 +411,7 @@ const TicketDetails = () => {
                                 .map(([key, value]) => (
                                     <Col span={12} key={key}>
                                     <Text type="secondary">{formatLabel(key)}</Text>
-                                    <div style={{ fontWeight: 500 }}>{renderValue(value, key)}</div>
+                                    <div style={{ fontWeight: 500 }}>{renderValue(value)}</div>
                                     </Col>
                                 ))}
                                                             

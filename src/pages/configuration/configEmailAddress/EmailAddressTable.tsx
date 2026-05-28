@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { StyledTable } from '../../../components/StyledTable'
-import { Container, StyledInput, StyledSelect, StyledDatePicker, SearchContainer, AddButton } from "../../../components/StyledComponents";
+import { Container, StyledInput, StyledSelect, StyledDatePicker, AddButton } from "../../../components/StyledComponents";
 import { Row, Col, Form, Space, Button, Tag, message } from 'antd';
 import { EmailAddressProps } from '../../../types/EmailAddress_drawer';
 import type { ColumnsType } from "antd/es/table";
@@ -14,7 +14,9 @@ import API from '../../../api/api';
 
 const { RangePicker } = StyledDatePicker;
 
-const EmailAddressTable = ({onAddUserClick, shouldRefresh} : {onAddUserClick: () => void, shouldRefresh: number}) => {
+
+const EmailAddressTable = ({onAddUserClick} : {onAddUserClick: () => void}) => {
+//const EmailAddressTable = ({onAddUserClick} : {onAddUserClick: () => void, shouldRefresh: number}) => {
     const { email, loading, refetch } = getEmailAddress();
     const [ filteredCols, setFilteredCols ] = useState<EmailAddressProps[]>([]);
     const [ toeditId, setToeditId] = useState<number | null>(null);
@@ -163,12 +165,12 @@ const EmailAddressTable = ({onAddUserClick, shouldRefresh} : {onAddUserClick: ()
         setToeditId(null);
     }
 
-    // ✅ REFRESH when shouldRefresh changes
-    useEffect(() => {
-        if (shouldRefresh) {
-          refetch();
-        }
-      }, [shouldRefresh]); // 👈 watch shouldRefresh only
+    // ✅ REFRESH when shouldRefresh changes -- to reload after email creation
+    // useEffect(() => {
+    //     if (shouldRefresh) {
+    //       refetch();
+    //     }
+    //   }, [shouldRefresh]); // 👈 watch shouldRefresh only
 
     const handleSearching = (values : any) => {
         const data = email.filter((item: EmailAddressProps) => {
@@ -269,7 +271,7 @@ const EmailAddressTable = ({onAddUserClick, shouldRefresh} : {onAddUserClick: ()
 
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", padding: 10 }}>
-            <AddButton type="primary" onClick={onAddUserClick}> <AppstoreAddOutlined/> ADD EMAIL PROFILE  </AddButton>
+            <AddButton type="primary" style={{display: "none"}} onClick={onAddUserClick}> <AppstoreAddOutlined/> ADD EMAIL PROFILE  </AddButton>
         </div>
         <Form form={form} >
             <StyledTable<EmailAddressProps> columns={columns} data={filteredCols} rowKey='SystemId'></StyledTable> 

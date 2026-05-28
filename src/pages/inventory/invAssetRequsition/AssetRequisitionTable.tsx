@@ -25,19 +25,19 @@ const AssetRequisitionTable = () => {
         serial: string;
         exists: boolean;
       } | null>(null);
-    const [ updatedData, setUpdatedData ] = useState<Partial<AssetRequisitionProps>>({});
+    // const [ updatedData, setUpdatedData ] = useState<Partial<AssetRequisitionProps>>({});
     const [ updatingId, setUpdatingId] = useState<number | null>(null);
     const [ form ] = Form.useForm();
 
 
     const cancelEdit = () => {
-        setUpdatedData({});
+        // setUpdatedData({});
         setUpdatingId(null);
     }
 
     const handleEdit = (record: AssetRequisitionProps) => {
         setUpdatingId(record.SystemId);
-        setUpdatedData({...record});
+        // setUpdatedData({...record});
         form.setFieldsValue({
             ItemDescription : record.ItemDescription,
             AccountName : record.AccountName,
@@ -193,7 +193,7 @@ const AssetRequisitionTable = () => {
     const uploadProps: UploadProps = {
         name: "file",
         multiple: false, // Excel usually 1 file only
-        customRequest: async ({ file, onSuccess, onError }) => {
+        customRequest: async ({ file,  onError }) => {
           try {
             const formData = new FormData();
             formData.append("file", file as Blob);

@@ -9,7 +9,6 @@ import { getAllEquipment } from '../../../hooks/inventory/equipmentInv_hooks';
 import { Loader } from '../../../components/Loader';
 import dayjs from "dayjs";
 import { formatDate } from '../../../utils/dateFormatter';
-import API from '../../../api/api';
 
 // 2️⃣ Type helper for string keys
 type StringKeys<T> = {

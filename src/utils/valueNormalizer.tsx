@@ -63,7 +63,7 @@ const buildFileUrl = (file: any) => {
 };
 
 
-export const renderValue = (value: any, key: string) => {
+export const renderValue = (value: any) => {
   // FILE FIELDS (dynamic detection)
   if (isFileArray(value)) {
     return value.map((file: any, i: number) => (
