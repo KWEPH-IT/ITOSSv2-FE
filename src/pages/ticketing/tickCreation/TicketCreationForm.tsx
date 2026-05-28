@@ -265,7 +265,7 @@ const TicketCreationForm = () => {
 
     const rowSelection = {
       selectedRowKeys: selectedModules,
-      onChange: (keys: React.Key[], rows: any[]) => {
+      onChange: (_keys: React.Key[], rows: any[]) => {
         // store module identifiers (not labels)
         setSelectedModules(rows.map(r => r.module));
       },

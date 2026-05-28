@@ -22,7 +22,7 @@ const TicketPage = () => {
             </p>
         </div>
 
-        <div className="grid-container">
+        <div className="card-container">
           <Row gutter={[24, 24]} justify="center" >
            
             { ParentCategs?.map((i : TicketCategProps) => {

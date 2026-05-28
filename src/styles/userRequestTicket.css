@@ -67,7 +67,7 @@
     border: 1px solid rgba(255, 255, 255, 0.3);
   }
 
-  .grid-container {
+  .card-container {
     max-width: 1600px;
     margin: 0 auto;         /* Centers the grid */
     margin-top: -80px;      /* PULLS the cards UP into the hero section */

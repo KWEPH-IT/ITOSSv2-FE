@@ -5,6 +5,7 @@ import {  SaveOutlined } from "@ant-design/icons";
 import { DrawerProps } from '../../../types/Drawer';
 import API from '../../../api/api';
 import { GroupEmailProps } from '../../../types/GroupEmails_drawer';
+import { Loader } from '../../../components/Loader';
 
 const GroupEmailForm: React.FC<DrawerProps & {record?: GroupEmailProps | null}> = ({isDrawerOpen, drawerMode, closeDrawer, onUserAction, record}) => {
   const [ form ] = Form.useForm();
@@ -75,6 +76,7 @@ const GroupEmailForm: React.FC<DrawerProps & {record?: GroupEmailProps | null}> 
     }
   }
 
+  if(loading) return <Loader></Loader>
   return (
     <Container>
       <Drawer
