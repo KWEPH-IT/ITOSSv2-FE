@@ -28,3 +28,6 @@ jobs:
           context: .
           push: true
           tags: reginabanadera/kwe_itoss_front_end:latest
+
+          build-args: |
+            VITE_SERVER_API_URL=${{ secrets.VITE_SERVER_API_URL }}
