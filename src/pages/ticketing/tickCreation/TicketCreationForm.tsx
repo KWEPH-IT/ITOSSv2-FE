@@ -44,26 +44,29 @@ const TicketCreationForm = () => {
   const [ modules, setModules ] = useState([]);
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const navigate = useNavigate();
+  const employeeId = userData?.EmployeeId;
 
   useEffect(() => {
     const root = allCategories?.filter((cat: TicketCategProps) => cat.ParentId === null);
     setLevels([root]);
   }, [allCategories]);
 
+
+
   const filtered =
     employees?.filter(
       (i: vwAtKWEProps) =>
-        i.SuperiorId === userData.EmployeeId ||
-        i.DeptHeadId === userData.EmployeeId ||
-        i.EmployeeId === userData.EmployeeId
+        i.SuperiorId === employeeId ||
+        i.DeptHeadId === employeeId ||
+        i.EmployeeId === employeeId
     ) || [];
 
     const finalEmp = filtered.length > 0
     ? filtered
     : userData
       ? [{
-          EmployeeId: userData.EmployeeId,
-          EmployeeName: userData.FullName
+          EmployeeId: employeeId,
+          EmployeeName: employeeId
         }]
       : [];
 

@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ConfigProvider } from 'antd';
 import './index.css' // ✅ global styles
 
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
