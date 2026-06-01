@@ -53,12 +53,13 @@ const TicketCreationForm = () => {
 
 
 
-    const filtered = (employees ?? [])
-    .filter(Boolean)
-    .filter((i: vwAtKWEProps) =>
-      i.SuperiorId === employeeId ||
-      i.DeptHeadId === employeeId ||
-      i.EmployeeId === employeeId
+    const filtered = (employees ?? []).filter((i) =>
+      i &&
+      (
+        i.SuperiorId === employeeId ||
+        i.DeptHeadId === employeeId ||
+        i.EmployeeId === employeeId
+      )
     );
 
     const finalEmp = filtered.length > 0
