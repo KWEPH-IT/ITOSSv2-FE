@@ -53,7 +53,7 @@ const TicketCreationForm = () => {
 
 
 
-    const filtered = (employees ?? []).filter((i) =>
+    const filtered = (employees ?? []).filter((i : vwAtKWEProps) =>
       i &&
       (
         i.SuperiorId === employeeId ||
