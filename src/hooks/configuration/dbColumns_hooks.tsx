@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchAll } from "../../services/configuration/dbColumn_services";
 
 
-export const getDBColumns = (sa: string) => {
+export const getDBColumns = (sa?: string) => {
     const [columns, setColumns] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -21,10 +21,14 @@ export const getDBColumns = (sa: string) => {
     };
   
     useEffect(() => {
-      if (sa) {
-        fetchAllDBColumns();
+      if (!sa) {
+        setColumns([]);
+        return;
       }
+  
+      fetchAllDBColumns();
     }, [sa]);
+  
   
     return { columns, loading, error, refetch: () => fetchAllDBColumns() };
   };

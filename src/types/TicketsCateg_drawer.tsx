@@ -34,6 +34,7 @@ export interface TicketCustomFields {
 
 export interface TicketApprover {
     CategoryId: number;
+    LevelNo: number;
     ApproverType: "Role" | "Specific User" | "Dynamic Superior" | "Dynamic Manager";
     ApproverValue: string;
     Description: string;

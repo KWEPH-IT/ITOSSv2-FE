@@ -54,10 +54,10 @@ const UserHome = () => {
                 </Col>
 
                 <Col xs={24} md={8}>
-                    <Link to="/ticketCreation">
+                <Link onClick={() => handleLoggedAction(userId!, 'TICKET APPROVAL', 'Clicked ticket approval button')} to="/ticketApproval">
                         <Card hoverable className="action-card">
                         <BookOutlined className="action-icon" />
-                        <h3>Approval Requests</h3>
+                        <h3>Tickets for Review</h3>
                         <p>Review and approve requests</p>
                         </Card>
                     </Link>

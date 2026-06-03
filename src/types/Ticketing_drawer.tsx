@@ -3,9 +3,21 @@ export interface TicketProps {
     TicketNumber: string,
     RequestType: number,
     RequestName: string,
+    CurrentLevel: number,
     Status:string,
+    ISId: string,
+    DHId:string,
+    InhouseName: string,
+    RequestorName: string,
+    RequestForName: string,
     DateCreated: string,
-    DateModified: string;
+    DateModified: string,
+    custom_fields?: {
+        CustomFields?: any[]
+    }[],
+    modules?: {
+        ModuleName?: any[]
+    }[],
 }
 
 export interface ModuleProps {
@@ -13,7 +25,6 @@ export interface ModuleProps {
     label: string,
     hasAccess: boolean
 }
-
 
 export interface TicketMessage {
     TicketNumber: string,
