@@ -43,7 +43,7 @@ const TicketDetails = () => {
           new Date(b.DateSent).getTime() - new Date(a.DateSent).getTime()
       );
     const fields = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
-
+ 
     const EXCLUDED_FIELDS = ["EmployeeId", "SystemName", "category"]
     
     const handleTabChange = (key: string) => {
