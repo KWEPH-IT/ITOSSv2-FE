@@ -26,8 +26,9 @@ const ApprovalPage: React.FC = () => {
   const filters = useMemo(() => ({}), []);
   const [ drawerState, setDrawerState ] = useState<{open: boolean; record: TicketProps | null}>({open: false, record: null});
 
+
   //TICKETS
-  const { ticket, loading } = useTickets(filters);
+  const { ticket, loading, refetch } = useTickets(filters);
   const { approver } = useTicketApprovers();
 
   const getLevelConfig = (
@@ -42,7 +43,7 @@ const ApprovalPage: React.FC = () => {
   };
   
   //HISTORY
-  const { history } = useApprovalHistory ();
+  const { history, refetch: refetchHistory } = useApprovalHistory ();
 
   const isCurrentApprover = (
     ticket: TicketProps,
@@ -67,8 +68,15 @@ const ApprovalPage: React.FC = () => {
         return false;
     }
   };
-  
 
+  const refreshUserTable = async () => {
+    await Promise.all([
+      refetch(),
+      refetchHistory()
+    ]);
+  };
+
+  
   const pendingTickets = useMemo(() => {
     if (!ticket || !userId || !approver) return [];
     
@@ -152,19 +160,31 @@ const ApprovalPage: React.FC = () => {
     return [
       ...baseColumns,
       { title: "Action", key: "Action",
-        render: (_:any, record: any) => {
-          const action = record.approvers?.[0];
+        render: (_: any, record: any) => {
+          const lastAction = record.approvers?.reduce(
+            (latest: any, current: any) => {
+              return !latest || current.DateActed > latest.DateActed
+                ? current
+                : latest;
+            },
+            null
+          );
       
-          return action?.Action
+          return lastAction?.Action ?? "-";
         }
-       },
+      },
       { title: "Date Acted",  key: "DateActed", 
-        render: (_:any, record: any) => {
-          const action = record.approvers?.[0];
+        render: (_: any, record: any) => {
+          const lastAction = record.approvers?.reduce(
+            (latest: any, current: any) => {
+              return !latest || current.DateActed > latest.DateActed
+                ? current
+                : latest;
+            },
+            null
+          );
       
-          return action?.DateActed
-            ? dayjs(action.DateActed).fromNow()
-            : "-";
+          return lastAction?.DateActed ? dayjs(lastAction.DateActed).fromNow() : "-";
         }
        },
     ];
@@ -270,7 +290,7 @@ const ApprovalPage: React.FC = () => {
             closeDrawer={onClose}
             drawerMode="edit"
             record={drawerState.record}
-            onUserAction={() => {}}
+            onUserAction={refreshUserTable}
           />
           </div>
         </div>
