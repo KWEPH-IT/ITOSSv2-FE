@@ -1,19 +1,23 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { DrawerProps } from '../../../types/Drawer'
-import { Drawer,  Row, Descriptions, List, Space, Button } from 'antd'
+import { Drawer,  Row, Descriptions, List, Space, Button, message, Modal } from 'antd'
 import { RightOutlined, CloseOutlined, CheckOutlined } from "@ant-design/icons";
 import { TicketProps } from '../../../types/Ticketing_drawer'
 import { renderValue, formatLabel } from '../../../utils/valueNormalizer'
 import { getDBColumns } from '../../../hooks/configuration/dbColumns_hooks';
+import { StyledTextArea } from '../../../components/StyledComponents';
+import API from '../../../api/api';
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
-const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> = ({isDrawerOpen, closeDrawer, record}) => {
+
+const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> = ({isDrawerOpen, closeDrawer, onUserAction, record}) => {
 
     const { columns = [] } = getDBColumns(record?.InhouseName);
-
     const columnsSafe = Array.isArray(columns) ? columns : [];
+    const [ showModal, setShowModal ] = useState(false);
+    const [reason, setReason] = useState("");
 
     
     const convertDBNames = (module: string) => {
@@ -30,22 +34,74 @@ const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> 
     
     const EXCLUDED_FIELDS = ["EmployeeId", "SystemName", "category"]
 
+    const handleApprove = async() => {
+        try{
+            if(!record){
+                return false;
+            }
+
+            //console.log(record)
+
+            const response = await API.post(`/api/approve`, record)
+            if (response.status === 200){
+                message.success(response.data.message);
+                onUserAction();
+                closeDrawer();
+            }
+            else{
+                message.error(response.data.message);
+            }
+
+        }
+        catch(e:any){
+            message.error("Error on approving  request ", e);
+            console.error("Error on approving  request ", e);
+        }
+    }
+
+
+    const handleDecline = async() => {
+        try{
+            if(!record){
+                return false;
+            }
+
+            const payload = {
+                ...record, 
+                reason
+            }
+
+            const response = await API.post(`/api/decline`, payload)
+            if (response.status === 200){
+                message.success(response.data.message);
+                onUserAction();
+                closeDrawer();
+            }
+            else{
+                message.error(response.data.message);
+            }
+
+        }
+        catch(e:any){
+            message.error("Error on declining  request ", e);
+            console.error("Error on declining  request ", e);
+        }
+    }
+
     
   return (
+    <>
     <Drawer
         open={isDrawerOpen}
         onClose={closeDrawer}
         width={700}
         extra={
             <Space>
-              <Button color="danger" variant="outlined"><CloseOutlined/> Decline</Button>
-              <Button type="primary"> <CheckOutlined/>
-                Approve
-              </Button>
+              <Button color="danger" variant="outlined" onClick={() => setShowModal(true)}><CloseOutlined/> Decline</Button>
+              <Button type="primary" onClick={() => handleApprove()}> <CheckOutlined/> Approve </Button>
             </Space>
           }
         >
-            
             <div style={{ marginTop: 25}} >
                 <Row gutter={12}>
                     <p style={{ fontSize: "10px", padding: "0 6px", marginTop: "2px", fontWeight: 600}}> GENERAL DETAILS </p>
@@ -104,6 +160,18 @@ const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> 
             
 
     </Drawer>
+
+    <Modal
+        title="Reason for declining"
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={showModal}
+        onOk={handleDecline}
+        onCancel={() => setShowModal(false)}>
+        <StyledTextArea  id='reason' style={{ fontSize: 12 }} rows={5} onChange={(e) => setReason(e.target.value)}></StyledTextArea>
+    </Modal> 
+    
+
+    </>
   )
 }
 
