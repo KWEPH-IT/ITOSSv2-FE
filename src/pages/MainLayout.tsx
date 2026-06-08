@@ -7,6 +7,7 @@ import { getUserData } from "../hooks/user_hooks";
 import { useAuth } from "../context/AuthContext";
 import { ReactNode } from "react";
 import { Loader } from "../components/Loader";
+import { useLocation } from "react-router-dom";
 
 const {  Content, Footer } = Layout;
 
@@ -19,7 +20,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({title, children}) => {
   const currentYear = new Date().getFullYear();
   const [collapsed, setCollapsed] = useState(false)
   const { userId }  = useAuth();
-  
+  const location = useLocation();
+
   // Prevent API calls if userId is null
   const { userData, loading } = getUserData(userId);
 
@@ -39,7 +41,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({title, children}) => {
       {/* Right side contains Header + Content + Footer */}
       <Layout >
 
-      <AppHeader collapsed={collapsed} setCollapsed={setCollapsed} userId={userId} userName={userData.FullName} dept={userData.Department} />
+      <AppHeader collapsed={collapsed} setCollapsed={setCollapsed} userId={userId} userName={userData.FullName} dept={userData.Department} userGroup={userData.UserGroup}/>
       <Content style={ userData.Department === 'IT'? { padding: "0 24px 24px" } : undefined}>
         {userData.Department === 'IT' && (
           <Breadcrumb
@@ -53,7 +55,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({title, children}) => {
 
       <div
         style={
-          userData.Department === 'IT'
+          userData.Department === 'IT' && location.pathname != "/it-home"
             ? { padding: 24, minHeight: 280, background: "#fff" }
             : undefined
         }

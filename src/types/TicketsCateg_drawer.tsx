@@ -19,15 +19,15 @@ export interface TicketCustomFields {
     FieldName: string;
     FieldType: string;
     FieldLabel: string;
-    IsGroup: string;
-    GroupName: string;
-    IsRepeatable: string;
-    ValueMode: string | null;
-    SelectSourceType: string | null;
-    SelectSourceValue: string | null; 
-    TableName: string | null;
-    ValueColumn: string | null;
-    LabelColumn: string | null;
+    IsGroup?: string;
+    GroupName?: string;
+    IsRepeatable?: string;
+    ValueMode?: string | null;
+    SelectSourceType?: string | null;
+    SelectSourceValue?: string | null; 
+    TableName?: string | null;
+    ValueColumn?: string | null;
+    LabelColumn?: string | null;
     options?: SelectOption[]
     StaticOptions?: SelectOption[];
 }

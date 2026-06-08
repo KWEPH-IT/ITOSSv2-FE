@@ -1,14 +1,94 @@
-.welcome-container {
-  padding: 10px;
-  overflow-wrap: break-word;
+.welcome-banner {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  padding: 10px 60px;
+  border-radius: 18px;
+  overflow: hidden;
+
+  /* soft warm gradient like your image */
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #fff4ee 80%,
+    #ffe7db 100%
+  );
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.welcome-container h2 {
-  font-size: clamp(18px, 5vw, 28px);
-  margin: 0 0 10px 0;
-  font-weight: bold;
+
+/* left content */
+.welcome-banner__content {
+  z-index: 2;
+  max-width: 60%;
 }
-.welcome-container p {
-  font-size: 14px;
-  color: #666;
+
+.welcome-banner__title {
+  font-size: 45px;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.welcome-banner__title span {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+.welcome-banner__subtitle {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* right illustration */
+.welcome-banner__illustration {
+  position: relative;
+  z-index: 1;
+  width: 350px;
+  height: 250px;
+  background: url("/images/transportation.png") no-repeat center;
+  background-size: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+}
+
+/* decorative blob */
+.welcome-banner::after {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 120, 80, 0.25),
+    transparent 50%
+  );
+  border-radius: 50%;
+  z-index: 0;
+}
+
+/* responsive */
+@media (max-width: 768px) {
+  .welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .welcome-banner__content {
+    max-width: 100%;
+  }
+
+  .welcome-banner__illustration {
+    width: 180px;
+    height: 120px;
+  }
 }
