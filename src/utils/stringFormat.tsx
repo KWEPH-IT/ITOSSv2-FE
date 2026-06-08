@@ -21,6 +21,15 @@ export const toProperCase = (str: string) => {
     .join(' ');
 };
 
+// First Name
+export const NormalCase = (str :string) => {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export const getInitials = (name: string) => {
   if (!name) return "";
 

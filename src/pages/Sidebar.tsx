@@ -8,7 +8,7 @@ const { Sider } = Layout;
 
 const items = [
   {
-    key: "/home",
+    key: "/home-redirect",
     icon: <HomeFilled className="app-sider-icon" />,
     label: "Home",
   },

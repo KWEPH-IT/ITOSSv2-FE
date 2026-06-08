@@ -15,9 +15,10 @@ interface HeaderProps {
   userId: string;
   userName: string;
   dept: string;
+  userGroup: string;
 }
 
-const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, userName, dept}) => {
+const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, userName, dept, userGroup}) => {
   const displayName = formatName(userName);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -95,11 +96,15 @@ const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, user
         >
           <Space style={{ cursor: "pointer" }}>
             <Avatar
-              style={{ backgroundColor: dept === 'IT' ? '#fa8c16' : '#FFFF', color:dept === 'IT' ? '#FFF' : '#000', fontWeight: 600, marginRight: "10px" }}
+              style={{ background: dept === 'IT' ? 'linear-gradient(135deg, #ffb347, #ff5e62)' : '#FFFF', color:dept === 'IT' ? '#FFF' : '#000', fontWeight: 600, marginRight: "10px" }}
             >
                 {getInitials(displayName)}
             </Avatar>
-            <Typography.Text style={{color:dept === 'IT' ? '#000' : '#FFFF', fontWeight: 600 }}>{displayName}</Typography.Text>
+            <div style={{ display: "flex", flexDirection: "column", lineHeight: 0.7 }}>
+              <Typography.Text style={{ color: dept === "IT" ? "#000" : "#FFF", fontWeight: 600}}>{displayName}</Typography.Text>
+
+              <Typography.Text style={{ color: dept === "IT" ? "#000" : "#FFF", fontWeight: 300, fontSize: 12,}}>{userGroup}</Typography.Text>
+            </div>
           </Space>
         </Dropdown>
       </div>
