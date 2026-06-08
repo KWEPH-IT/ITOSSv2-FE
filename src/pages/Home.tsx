@@ -8,7 +8,7 @@ import { Card, Row, Col } from "antd";
 import { CheckOutlined, CloseOutlined, ContainerOutlined  } from "@ant-design/icons";
 import { useTickets } from "../hooks/ticketing/ticketing_hooks";
 import { Loader } from "../components/Loader";
-import { TicketProps } from "../types/Ticketing_drawer";
+//import { TicketProps } from "../types/Ticketing_drawer";
 
 const Home = () => {
   const { userId }  = useAuth();
