@@ -44,9 +44,10 @@ const items = [
   {
     key: "ticket",
     icon: <TagsFilled  className="app-sider-icon" />,
-    label: "Ticket",
+    label: "Service Desk",
     children: [
-      { key: "/ticketCreation", label: "Ticket Creation" },
+      { key: "/ticketDashboard", label: "Service Dashboard" },
+      { key: "/ticketCreation", label: "Create Request" },
     ],
   },
 ];
