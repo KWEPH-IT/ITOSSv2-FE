@@ -18,6 +18,7 @@ import TicketCreationForm from './pages/ticketing/tickCreation/TicketCreationFor
 import TicketCreationTable from './pages/ticketing/tickCreation/TicketCreationTable';
 import TicketDetails from './pages/ticketing/tickCreation/TicketDetails';
 import TicketApprovalPage from './pages/ticketing/tickForApproval/TicketApprovalPage';
+import TicketDashboardPage from './pages/ticketing/tickDashboard/TicketDashboardPage';
 
 const App = () => {
   return (
@@ -51,6 +52,7 @@ const App = () => {
         <Route path="/ticketList" element={<ProtectedRoute><TicketCreationTable /></ProtectedRoute>} />
         <Route path="/ticketDetails/:tn" element={<ProtectedRoute><TicketDetails /></ProtectedRoute>}/>
         <Route path="/ticketApproval" element={<ProtectedRoute><TicketApprovalPage /></ProtectedRoute>}/>
+        <Route path="/ticketDashboard" element={<ProtectedRoute><TicketDashboardPage/></ProtectedRoute>} />
       </Routes>
     </Router>
   )

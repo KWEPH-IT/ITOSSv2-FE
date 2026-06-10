@@ -141,7 +141,7 @@ const ApprovalPage: React.FC = () => {
           key: "Status",
         },
         {
-          title: "Date Created",
+          title: "Created On",
           dataIndex: "DateCreated",
           key: "DateCreated",
           render: (text: string) => dayjs(text).fromNow(),
@@ -253,7 +253,7 @@ const ApprovalPage: React.FC = () => {
       <div className="table-grid-container">
           <div className="table-grid-wrapper">
           <SearchContainer >
-            <SearchInput placeholder="Search by Ticket Number, Request Type" style={{ width: "400px" }} suffix={<SearchOutlined />} value={search} onChange={handleSearch} ></SearchInput>
+            <SearchInput placeholder="Search by Ticket Number, Requestor, Request For" style={{ width: "400px" }} suffix={<SearchOutlined />} value={search} onChange={handleSearch} ></SearchInput>
             <Segmented
               style={{ fontSize: "12px" }}
               options={[
