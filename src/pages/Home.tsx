@@ -12,9 +12,9 @@ import { Loader } from "../components/Loader";
 
 const Home = () => {
   const { userId }  = useAuth();
-   const { userData, loading } = getUserData(userId);
-   const filters = {};
-   const { ticket, loading: tLoading } = useTickets(filters)
+  const { userData, loading } = getUserData(userId);
+  const filters = useMemo(() => ({}), []);
+  const { ticket, loading: tLoading } = useTickets(filters)
 
   const unAssignedTickets = useMemo(() => {
     if (!ticket) return [];

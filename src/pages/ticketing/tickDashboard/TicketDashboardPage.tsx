@@ -1,11 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import MainLayout from "../../MainLayout";
+import "../../../styles/ticketDashboard.css"
 import { StyledTable } from "../../../components/StyledTable";
 import { SearchContainer, SearchInput, } from "../../../components/StyledComponents";
 import { Row, Col, Space, Checkbox, Dropdown, Button } from "antd";
 import { SearchOutlined, SettingOutlined, MenuOutlined } from "@ant-design/icons";
 import { useTickets } from "../../../hooks/ticketing/ticketing_hooks";
+import { useTicketApprovers } from "../../../hooks/configuration/ticketApprover_hooks";
+import { TicketProps } from "../../../types/Ticketing_drawer";
 import { Loader } from "../../../components/Loader";
+import { useNavigate } from "react-router-dom";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable,arrayMove} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -65,9 +69,66 @@ const SortableColumn = ({
   );
 };
 
+type CheckedKey = "unassigned" | "assigned" | "closed";
+
 const TicketDashboardPage = () => {
     const filters = useMemo(() => ({}), []);
     const { ticket, loading } = useTickets(filters);
+    const { approver } = useTicketApprovers();
+    const [ search, setSearch ] = useState("");
+    const [ filtered, setFiltered ] = useState<TicketProps[]>([])
+
+    const [checked, setChecked] = useState<Record<CheckedKey, boolean>>({
+        unassigned: false,
+        assigned: false,
+        closed: false,
+      });
+    const navigate = useNavigate();
+
+    const maxLevelPerCategory = useMemo(() => {
+        return approver?.reduce((acc: any, item: any) => {
+          const cat = item.CategoryId;
+          const lvl = item.LevelNo;
+      
+          if (!acc[cat] || lvl > acc[cat]) {
+            acc[cat] = lvl;
+          }
+      
+          return acc;
+        }, {});
+      }, [approver]);
+
+    const finalTickets = useMemo(() => {
+        if (!ticket) return [];
+      
+        return ticket.filter((t: any) => {
+          const maxLevel = maxLevelPerCategory[t.RequestType];
+          return t.CurrentLevel === maxLevel;
+        });
+    }, [ticket, maxLevelPerCategory]);
+
+    const getTicketBucket = (t: any) => {
+        if (t.Status === "Closed") return "closed";
+        if (t.Assigned) return "assigned";
+        return "unassigned";
+    };
+
+    const filteredTickets = useMemo(() => {
+        const activeFilters: string[] = [];
+      
+        if (checked.unassigned) activeFilters.push("unassigned");
+        if (checked.assigned) activeFilters.push("assigned");
+        if (checked.closed) activeFilters.push("closed");
+      
+        // if nothing selected → show all final tickets
+        if (activeFilters.length === 0) {
+          return finalTickets;
+        }
+      
+        return finalTickets.filter((t: any) =>
+          activeFilters.includes(getTicketBucket(t))
+        );
+      }, [finalTickets, checked]);
 
     const allColumns = [
         { title: "Ticket Number", key: "TicketNumber", dataIndex: "TicketNumber" },
@@ -75,9 +136,12 @@ const TicketDashboardPage = () => {
         { title: "Requestor Name", key: "RequestorName", dataIndex: "RequestorName" },
         { title: "Request For", key: "RequestForName", dataIndex: "RequestForName" },
         { title: "Status", key: "Status", dataIndex: "Status" },
+        { title: "Assigned To", key: "AssignedTo", dataIndex: "AssignedTo" },
         { title: "Created On", key: "CreatedOn", dataIndex: "DateCreated", render: (text: string) => dayjs(text).fromNow() },
         { title: "Date Created", key: "DateCreated", dataIndex: "DateCreated", render: (text: string) => dayjs(text).format("YYYY-MM-DD") },
+        
     ];
+
     const saved = getSavedColumnState();
     const [visibleKeys, setVisibleKeys] = useState<string[]>(
         saved?.visibleKeys || allColumns.map((c) => c.key)
@@ -168,6 +232,23 @@ const TicketDashboardPage = () => {
         </div>
     );
 
+    const handleSearch = (e : React.ChangeEvent<HTMLInputElement>) =>{
+        const value = e.target.value.toLowerCase();
+        setSearch(value)
+    }
+
+    useEffect(() => {
+        const filtered = filteredTickets.filter((t: TicketProps) => {
+    
+          return (
+            (t.TicketNumber?.toLowerCase() || "").includes(search) ||
+            (t.RequestName?.toLowerCase() || "").includes(search) ||
+            (t.RequestorName?.toLowerCase() || "").includes(search)
+          )
+        });
+          setFiltered(filtered);
+      }, [filteredTickets, search])
+
     if (loading) return <Loader />;
 
     return (
@@ -175,11 +256,7 @@ const TicketDashboardPage = () => {
         <Row gutter={[16, 16]}>
             <Col span={24}>
             <SearchContainer>
-                <SearchInput
-                placeholder="Search by Ticket Number, Request Type"
-                style={{ width: "400px" }}
-                suffix={<SearchOutlined />}
-                />
+                <SearchInput placeholder="Search by Ticket Number, Request Type" style={{ width: "400px" }} suffix={<SearchOutlined />} value={search} onChange={handleSearch} />
             </SearchContainer>
             </Col>
         </Row>
@@ -194,9 +271,25 @@ const TicketDashboardPage = () => {
                 }}
             >
                 <Space>
-                <Checkbox>Unassigned</Checkbox>
-                <Checkbox>Assigned</Checkbox>
-                <Checkbox>Closed</Checkbox>
+                <Checkbox.Group
+                    options={[
+                        { label: "Unassigned", value: "unassigned" },
+                        { label: "Assigned", value: "assigned" },
+                        { label: "Closed", value: "closed" },
+                    ]}
+                    value={(Object.keys(checked) as CheckedKey[]).filter(
+                        (k) => checked[k]
+                    )}
+                    onChange={(checkedValues) => {
+                        const values = checkedValues as CheckedKey[];
+
+                        setChecked({
+                        unassigned: values.includes("unassigned"),
+                        assigned: values.includes("assigned"),
+                        closed: values.includes("closed"),
+                        });
+                    }}
+                    />
                 </Space>
 
                 <Dropdown
@@ -215,21 +308,25 @@ const TicketDashboardPage = () => {
 
         <Row
             gutter={[16, 16]}
-            style={{ marginTop: 10 }}
+            style={{ marginTop: 30 }}
         >
             <Col span={24}>
             <StyledTable
+                className="table"
                 columns={columns}
-                data={ticket}
+                data={filtered}
                 pagination={{ size: "small" }}
                 rowKey="TicketNumber"
                 tableLayout="fixed"
-                onRow={() => ({
+                onRow={(record:TicketProps) => ({
                     style: {
                       fontSize: "12px",
-                      padding: "3px",
                       cursor: "pointer"
                     },
+    
+                    onClick: () => {
+                      navigate(`/ticketDetails/${btoa(record.TicketNumber)}`) 
+                    }
                   })}  
             />
             </Col>
