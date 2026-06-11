@@ -86,7 +86,9 @@ const TicketDashboardPage = () => {
     const navigate = useNavigate();
 
     const maxLevelPerCategory = useMemo(() => {
-        return approver?.reduce((acc: any, item: any) => {
+        if (!approver) return {};
+      
+        return approver.reduce((acc: any, item: any) => {
           const cat = item.CategoryId;
           const lvl = item.LevelNo;
       
@@ -96,14 +98,15 @@ const TicketDashboardPage = () => {
       
           return acc;
         }, {});
-      }, [approver]);
+    }, [approver]);
 
     const finalTickets = useMemo(() => {
-        if (!ticket) return [];
-      
+        if (!ticket || !maxLevelPerCategory) return [];
+        
         return ticket.filter((t: any) => {
-          const maxLevel = maxLevelPerCategory[t.RequestType];
-          return t.CurrentLevel === maxLevel;
+            const maxLevel = maxLevelPerCategory?.[t.RequestType];
+        
+            return t.CurrentLevel === maxLevel;
         });
     }, [ticket, maxLevelPerCategory]);
 
