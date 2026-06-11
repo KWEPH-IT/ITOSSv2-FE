@@ -55,8 +55,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({title, children}) => {
 
       <div
         style={
-          userData.Department === 'IT' && location.pathname != "/it-home"
-            ? { padding: 24, minHeight: 280, background: "#fff" }
+          userData.Department === 'IT' && (location.pathname != "/it-home" && !location.pathname.includes("/ticket"))
+            ? { padding: 24, minHeight: 600, background: "#fff" }
             : undefined
         }
       >
