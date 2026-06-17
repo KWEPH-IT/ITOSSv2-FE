@@ -32,5 +32,9 @@ export interface TicketMessage {
     SenderName: string,
     Message: string,
     Status: string,
-    DateSent: string
+    DateSent: string,
+    Files?: {
+        FileName: string,
+        FilePath: string,
+    }[],
 }
