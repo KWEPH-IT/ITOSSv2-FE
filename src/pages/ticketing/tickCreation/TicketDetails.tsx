@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import MainLayout from '../../MainLayout'
 import "../../../styles/userTicketDetails.css";
-import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message } from 'antd';
+import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message, Upload } from 'antd';
 import { StyledTextArea } from '../../../components/StyledComponents';
 import { useParams } from 'react-router-dom';
 import { useTickets } from '../../../hooks/ticketing/ticketing_hooks';
 import { Loader } from '../../../components/Loader';
 import { getInitials } from '../../../utils/stringFormat';
-import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined } from "@ant-design/icons";
+import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined } from "@ant-design/icons";
 import { formatLabel, renderValue } from '../../../utils/valueNormalizer';
 import { TicketMessage } from '../../../types/Ticketing_drawer';
 import { handleLoggedAction } from '../../../utils/Logger';
@@ -35,6 +35,9 @@ const TicketDetails = () => {
         ticketno: decoded_tn ?? undefined,
     }), [decoded_tn]);
     const [ mensahe, setMessage ] = useState(""); 
+    const [fileList, setFileList] = useState<any[]>([]);
+    const maxSizeMB = 5;
+    const allowedExt = ["jpg", "jpeg", "png", "gif", "pdf", "xls", "xlsx"];
 
     const { ticket, loading, refetch } = useTickets(filters)
     const selectedTicket = ticket?.[0];
@@ -42,6 +45,7 @@ const TicketDetails = () => {
         (a: TicketMessage, b: TicketMessage) =>
           new Date(b.DateSent).getTime() - new Date(a.DateSent).getTime()
       );
+
     const fields = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
  
     const EXCLUDED_FIELDS = ["EmployeeId", "SystemName", "category"]
@@ -75,6 +79,57 @@ const TicketDetails = () => {
           icon: <CloseOutlined />,
         },
     ];
+
+    const handleRemoveFile = (uid: string) => {
+        setFileList((prev) => prev.filter((file) => file.uid !== uid));
+    };
+
+    const uploadProps = {
+        beforeUpload: (file: File) => {
+          const ext = file.name.split(".").pop()?.toLowerCase();
+      
+          const isAllowedExt = allowedExt.includes(ext || "");
+      
+          const allowedMimeTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/gif",
+            "application/pdf",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          ];
+      
+          const isAllowedMime = allowedMimeTypes.includes(file.type);
+      
+          const isAllowed = isAllowedExt || isAllowedMime;
+      
+          if (!isAllowed) {
+            message.error(
+              "Only JPG, PNG, GIF, PDF, XLS, XLSX files are allowed."
+            );
+            return Upload.LIST_IGNORE;
+          }
+      
+          const isUnder5MB = file.size / 1024 / 1024 <= maxSizeMB;
+      
+          if (!isUnder5MB) {
+            message.error("File must be smaller than 5MB.");
+            return Upload.LIST_IGNORE;
+          }
+      
+          // Add to state manually
+          setFileList((prev) => [...prev, file]);
+      
+          return false; // prevent auto upload
+        },
+      
+        fileList,
+      
+        onRemove: (file: any) => {
+          setFileList((prev) => prev.filter((f) => f.uid !== file.uid));
+        },
+    };
 
 
     const handleMenuClick: MenuProps["onClick"] = async(info) => {
@@ -125,14 +180,25 @@ const TicketDetails = () => {
                 message.warning("Not message typed");
                 return;
             }
-            handleLoggedAction(userId!, 'SENT MESSAGE', "Sent message to the assigned IT personnel")
-            const response = await API.post(`/api/message`, {
-                ticket_no: decoded_tn,
-                message: mensahe,
+            handleLoggedAction(userId!, 'SENT MESSAGE', "Sent message!")
+
+            const formData = new FormData();
+            formData.append("ticketno", decoded_tn);
+            formData.append("message", mensahe);
+        
+            fileList.forEach((file) => {
+                formData.append("files", file);
             });
+
+            const response = await API.post(`/api/message`, formData, {
+                headers: {
+                  "Content-Type": "multipart/form-data",
+                },
+              });
             message.success(response.data.message);
 
             setMessage("")
+            setFileList([]);
             await refetch();
         }
         catch(e: any){
@@ -141,9 +207,8 @@ const TicketDetails = () => {
                 e.response?.data?.message || "Failed to send message"
             );
         }
-    }   
+    } 
 
-    
 
     if (loading) return <Loader></Loader>
     if (!ticket || ticket.length === 0) return <div>No ticket found</div>;
@@ -295,15 +360,59 @@ const TicketDetails = () => {
                             </Col>
 
                             <Col flex="auto">
-                                <StyledTextArea placeholder="Type your message here..." autoSize={{ minRows: 2, maxRows: 3 }}
+                                <div
+                                    style={{
+                                    border: "1px solid #d9d9d9",
+                                    borderRadius: 14,
+                                    padding: 10,
+                                    }}
+                                >
+                                    {/* Attached file preview */}
+                                    {fileList.length > 0 && (
+                                    <div style={{ marginBottom: 8 }}>
+                                        {fileList.map((file) => (
+                                        <div
+                                            key={file.uid}
+                                            style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            background: "#f0f0f0",
+                                            padding: "4px 10px",
+                                            borderRadius: 10,
+                                            marginRight: 6,
+                                            fontSize: 12,
+                                            }}
+                                        >
+                                            📎 {file.name}
+
+                                            <span
+                                                onClick={() => handleRemoveFile(file.uid)}
+                                                style={{
+                                                    marginLeft: 8,
+                                                    cursor: "pointer",
+                                                    fontWeight: "bold",
+                                                }}
+                                                >
+                                                ×
+                                            </span>
+                                        </div>
+                                        ))}
+                                    </div>
+                                    )}
+
+                                    {/* Text area */}
+                                    <StyledTextArea
+                                    placeholder="Type your message here..."
+                                    autoSize={{ minRows: 2, maxRows: 3 }}
                                     value={mensahe}
                                     onChange={(e) => setMessage(e.target.value)}
+                                    bordered={false}
                                     style={{
-                                        borderRadius: 14,
-                                        padding: 14,
+                                        padding: 0,
                                         fontSize: 12,
                                     }}
-                                />
+                                    />
+                                </div>
                             </Col>
 
                             <Col>
@@ -317,6 +426,20 @@ const TicketDetails = () => {
                                 >
                                     Post
                                 </Button>
+                            </Col>
+                            <Col>
+                                <Upload {...uploadProps} showUploadList={false}>
+                                    <Button
+                                    icon={<UploadOutlined />}
+                                    size="large"
+                                    style={{
+                                        height: 52,
+                                        paddingInline: 28,
+                                        borderRadius: 14,
+                                        fontWeight: 600,
+                                    }}
+                                    />
+                                </Upload>
                             </Col>
                         </Row>
                         
@@ -350,16 +473,60 @@ const TicketDetails = () => {
                                         <Row justify="space-between" align="top">
                                         <Col flex="auto">
                                             <Space direction="vertical" size={4}>
-                                            <Text strong style={{ fontSize: 14, color: "#172B4D",}}>
-                                                {item.SenderName}
-                                            </Text>
+                                                <Text strong style={{ fontSize: 14, color: "#172B4D",}}>
+                                                    {item.SenderName}
+                                                </Text>
 
-                                            <Text style={{ fontSize: 12, color: "#000", }}>
-                                                {item.Message}
-                                            </Text>
+                                                <Text style={{ fontSize: 12, color: "#000", }}>
+                                                    {item.Message} 
+                                                </Text>
+                                                {item.Files?.map((file: any) => {
 
-                                            <Tag color="blue">{item.Status}</Tag>
+                                                    const ext = file.FileName.split(".").pop().toLowerCase();
+
+                                                    const isImage = ["jpg","jpeg","png","gif"].includes(ext);
+
+                                                    return (
+                                                        <div
+                                                            key={file.FileName}
+                                                            onClick={() =>
+                                                                window.open(
+                                                                    `http://127.0.0.1:5000/api${file.FilePath}`,
+                                                                    "_blank"
+                                                                )
+                                                            }
+                                                            style={{
+                                                                cursor: "pointer",
+                                                                marginTop: 10
+                                                            }}
+                                                        >
+
+                                                            {isImage ? (
+                                                                <img
+                                                                    src={`http://127.0.0.1:5000/api${file.FilePath}`}
+                                                                    width={120}
+                                                                    height={80}
+                                                                    style={{
+                                                                        objectFit: "cover",
+                                                                        borderRadius: 10
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <Tag color="blue">
+                                                                    📎 {file.FileName}
+                                                                </Tag>
+                                                            )}
+
+                                                        </div>
+                                                    );
+                                                })}
+                                                
+                                                {item.Status &&
+                                                    item.Status !== "NULL" && (
+                                                        <Tag color="blue">{item.Status}</Tag>
+                                                    )}
                                             </Space>
+                                            
                                         </Col>
 
                                         <Col>
