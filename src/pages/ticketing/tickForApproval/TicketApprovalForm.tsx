@@ -40,8 +40,6 @@ const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> 
                 return false;
             }
 
-            //console.log(record)
-
             const response = await API.post(`/api/approve`, record)
             if (response.status === 200){
                 message.success(response.data.message);

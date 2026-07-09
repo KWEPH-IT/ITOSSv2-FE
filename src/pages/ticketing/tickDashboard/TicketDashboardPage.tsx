@@ -2,9 +2,9 @@ import { useState, useMemo, useEffect } from "react";
 import MainLayout from "../../MainLayout";
 import "../../../styles/ticketDashboard.css"
 import { StyledTable } from "../../../components/StyledTable";
-import { SearchContainer, SearchInput, } from "../../../components/StyledComponents";
-import { Row, Col, Space, Checkbox, Dropdown, Button } from "antd";
-import { SearchOutlined, SettingOutlined, MenuOutlined } from "@ant-design/icons";
+import { SearchContainer, SearchInput } from "../../../components/StyledComponents";
+import { Row, Col, Space, Checkbox, Dropdown, Button, Tag } from "antd";
+import { SearchOutlined, SettingOutlined, MenuOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
 import { useTickets } from "../../../hooks/ticketing/ticketing_hooks";
 import { useTicketApprovers } from "../../../hooks/configuration/ticketApprover_hooks";
 import { TicketProps } from "../../../types/Ticketing_drawer";
@@ -16,8 +16,30 @@ import { CSS } from "@dnd-kit/utilities";
 import { getSavedColumnState, saveColumnState } from "../../../utils/columSorter";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { getFullName } from "../../../utils/getEmployeeDetails";
+import { getEmployees } from "../../../hooks/configuration/vwAtKWE_hooks";
+import { vwAtKWEProps } from "../../../types/vwAtKWE_drawer";
+import { useAuth } from "../../../context/AuthContext";
 dayjs.extend(relativeTime);
 
+
+type ButtonColor =
+  | "default"
+  | "blue"
+  | "cyan"
+  | "gold"
+  | "green"
+  | "lime"
+  | "magenta"
+  | "orange"
+  | "pink"
+  | "purple"
+  | "red"
+  | "yellow"
+  | "volcano"
+  | "geekblue"
+  | "primary"
+  | "danger";
 
 interface SortableColumnProps {
   id: string;
@@ -48,42 +70,64 @@ const SortableColumn = ({
     cursor: "grab",
   };
 
+
   return (
     <div ref={setNodeRef} style={style}>
-    <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-      <Checkbox value={id} style={{ flex: 1, fontSize: 12 }}>
-        {title}
-      </Checkbox>
+      <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+        <Checkbox value={id} style={{ flex: 1, fontSize: 12 }}>
+          {title}
+        </Checkbox>
 
-      <MenuOutlined
-        {...attributes}
-        {...listeners}
-        style={{
-          cursor: "grab",
-          color: "#999",
-          fontSize: 12
-        }}
-      />
+        <MenuOutlined
+          {...attributes}
+          {...listeners}
+          style={{
+            cursor: "grab",
+            color: "#999",
+            fontSize: 12
+          }}
+        />
+      </div>
     </div>
-  </div>
   );
 };
 
-type CheckedKey = "unassigned" | "assigned" | "closed";
+type CheckedKey = "unassigned" | "assigned" | "processing" | "closed";
 
 const TicketDashboardPage = () => {
     const filters = useMemo(() => ({}), []);
     const { ticket, loading } = useTickets(filters);
     const { approver } = useTicketApprovers();
     const [ search, setSearch ] = useState("");
-    const [ filtered, setFiltered ] = useState<TicketProps[]>([])
+    const [ filtered, setFiltered ] = useState<TicketProps[]>([]);
+    const { employees, loading: empLoading } = getEmployees();
+    const [ selectedMembers, setSelectedMembers ] = useState<string[]>([]);
+    const [showMyTickets, setShowMyTickets] = useState(false);
+    const { userId } = useAuth();
+    const navigate = useNavigate();
+
+    const employeeTagColors: Record<string, ButtonColor> = {
+      K845: "purple",
+      K1815: "blue",
+      K1761: "pink",
+      K1709: "yellow",
+      K1124: "lime", 
+      K935: "cyan",
+      K1035: "geekblue"
+    };
+
+    const getTagColor = (employeeId: string) =>
+      employeeTagColors[employeeId] || "default";
+    
+    const userColor = userId ? getTagColor(userId) : "default";
 
     const [checked, setChecked] = useState<Record<CheckedKey, boolean>>({
         unassigned: false,
         assigned: false,
+        processing: false,
         closed: false,
       });
-    const navigate = useNavigate();
+    
 
     const maxLevelPerCategory = useMemo(() => {
         if (!approver) return {};
@@ -106,14 +150,26 @@ const TicketDashboardPage = () => {
         return ticket.filter((t: any) => {
             const maxLevel = maxLevelPerCategory?.[t.RequestType];
         
-            return t.CurrentLevel === maxLevel;
+            return (t.CurrentLevel === maxLevel ||
+              t.CurrentLevel >= maxLevel
+            );
         });
     }, [ticket, maxLevelPerCategory]);
 
-    const getTicketBucket = (t: any) => {
+
+    const getTicketBucket = (t: TicketProps) => {
         if (t.Status === "Closed") return "closed";
-        if (t.Assigned) return "assigned";
+        if (t.Status === "On Process") return "processing";
+        if (t.AssignedTo) return "assigned";
         return "unassigned";
+    };
+
+    const getStatusTagColor = (status: string) => {
+        if(status === "Assigned") return "gold";
+        if(status === "On Process") return "blue";
+        if(status === "For Closing") return "cyan";
+        if(status === "Closed") return "green";
+        return "orange"; 
     };
 
     const filteredTickets = useMemo(() => {
@@ -121,6 +177,7 @@ const TicketDashboardPage = () => {
       
         if (checked.unassigned) activeFilters.push("unassigned");
         if (checked.assigned) activeFilters.push("assigned");
+        if (checked.processing) activeFilters.push("processing");
         if (checked.closed) activeFilters.push("closed");
       
         // if nothing selected → show all final tickets
@@ -138,8 +195,23 @@ const TicketDashboardPage = () => {
         { title: "Request Type", key: "RequestName", dataIndex: "RequestName" },
         { title: "Requestor Name", key: "RequestorName", dataIndex: "RequestorName" },
         { title: "Request For", key: "RequestForName", dataIndex: "RequestForName" },
-        { title: "Status", key: "Status", dataIndex: "Status" },
-        { title: "Assigned To", key: "AssignedTo", dataIndex: "AssignedTo" },
+        { title: "Status", key: "Status", dataIndex: "Status",
+          render: (status : string) => (
+            <Tag color={getStatusTagColor(status)} style={{ fontSize: '10px'}}>
+              {status}
+            </Tag>
+          )
+        },
+
+        { title: "Assigned To", key: "AssignedTo", dataIndex: "AssignedTo", 
+          render: (assignedTo: string) => (
+            assignedTo  ? (
+              <Tag color={getTagColor(assignedTo)} style={{ fontSize: '10px'}}>
+                {getFullName(assignedTo, employees)}
+              </Tag>
+              ) : null
+          ),
+        },
         { title: "Created On", key: "CreatedOn", dataIndex: "DateCreated", render: (text: string) => dayjs(text).fromNow() },
         { title: "Date Created", key: "DateCreated", dataIndex: "DateCreated", render: (text: string) => dayjs(text).format("YYYY-MM-DD") },
         
@@ -177,6 +249,34 @@ const TicketDashboardPage = () => {
             return newOrder;
         });
     };
+    
+    
+    const memberFilterMenu = (
+      <div style={{ padding: 12, backgroundColor: '#FFF', fontSize: 12, letterSpacing: 0.7 }}>
+        <Checkbox.Group
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+          value={selectedMembers}
+          onChange={(values) => setSelectedMembers(values as string[])}
+        >
+          {employees && 
+            (employees
+              .filter((emp: vwAtKWEProps) => emp.Department === "IT")
+              .map((emp: vwAtKWEProps) => (
+              <Checkbox
+                key={emp.EmployeeId}
+                value={emp.EmployeeId}
+              >
+                {emp.FullName}
+              </Checkbox>
+            )))}
+        </Checkbox.Group>
+      </div>
+    );
+
 
     const columns = columnOrder
         .map((key) =>
@@ -241,18 +341,28 @@ const TicketDashboardPage = () => {
     }
 
     useEffect(() => {
-        const filtered = filteredTickets.filter((t: TicketProps) => {
+      const filtered = filteredTickets.filter((t: TicketProps) => {
     
-          return (
-            (t.TicketNumber?.toLowerCase() || "").includes(search) ||
-            (t.RequestName?.toLowerCase() || "").includes(search) ||
-            (t.RequestorName?.toLowerCase() || "").includes(search)
-          )
-        });
-          setFiltered(filtered);
-      }, [filteredTickets, search])
+        const matchesSearch =
+          (t.TicketNumber?.toLowerCase() || "").includes(search) ||
+          (t.RequestName?.toLowerCase() || "").includes(search) ||
+          (t.RequestorName?.toLowerCase() || "").includes(search);
+    
+        const matchesMember =
+          selectedMembers.length === 0 ||
+          selectedMembers.includes(t.AssignedTo);
+    
+        const matchesMyTickets =
+          !showMyTickets || t.AssignedTo === userId;
+    
+        return matchesSearch && matchesMember && matchesMyTickets;
+      });
+    
+      setFiltered(filtered);
+    
+    }, [filteredTickets, search, selectedMembers, showMyTickets, userId]);
 
-    if (loading) return <Loader />;
+    if (loading || empLoading) return <Loader />;
 
     return (
         <MainLayout title="Service Dashboard">
@@ -274,37 +384,57 @@ const TicketDashboardPage = () => {
                 }}
             >
                 <Space>
-                <Checkbox.Group
-                    options={[
-                        { label: "Unassigned", value: "unassigned" },
-                        { label: "Assigned", value: "assigned" },
-                        { label: "Closed", value: "closed" },
-                    ]}
-                    value={(Object.keys(checked) as CheckedKey[]).filter(
-                        (k) => checked[k]
-                    )}
-                    onChange={(checkedValues) => {
-                        const values = checkedValues as CheckedKey[];
+                  <Checkbox.Group
+                      options={[
+                          { label: "Unassigned", value: "unassigned" },
+                          { label: "Assigned", value: "assigned" },
+                          { label: "On Process", value: "processing" },
+                          { label: "Closed", value: "closed" }
+                      ]}
+                      value={(Object.keys(checked) as CheckedKey[]).filter(
+                          (k) => checked[k]
+                      )}
+                      onChange={(checkedValues) => {
+                          const values = checkedValues as CheckedKey[];
 
-                        setChecked({
-                        unassigned: values.includes("unassigned"),
-                        assigned: values.includes("assigned"),
-                        closed: values.includes("closed"),
-                        });
-                    }}
-                    />
+                          setChecked({
+                            unassigned: values.includes("unassigned"),
+                            assigned: values.includes("assigned"),
+                            processing: values.includes("processing"),
+                            closed: values.includes("closed"),
+                          });
+                      }}
+                  />
+                </Space>
+                
+                <Space>
+                  <Button variant={showMyTickets ? "solid" : "outlined"} color={userColor} icon={<UserOutlined />} onClick={() => setShowMyTickets(prev => !prev)}> My Tickets </Button>
+                  <Dropdown
+                    trigger={["click"]}
+                    dropdownRender={() => memberFilterMenu}
+                  >
+                      <Button icon={<TeamOutlined />}>
+                        Assigned To
+                      </Button>
+                  </Dropdown>
+
+                  <Dropdown
+                      trigger={["click"]}
+                      dropdownRender={() => menu}
+                      destroyOnHidden={false}
+                      overlayStyle={{ width: 200 }}
+                  >
+                  <Button icon={<SettingOutlined />}>
+                      Sort Columns
+                  </Button>
+                  </Dropdown>
+
+                  
+
+
                 </Space>
 
-                <Dropdown
-                    trigger={["click"]}
-                    dropdownRender={() => menu}
-                    destroyOnHidden={false}
-                    overlayStyle={{ width: 200 }}
-                >
-                <Button icon={<SettingOutlined />}>
-                    Sort Columns
-                </Button>
-                </Dropdown>
+                
             </div>
             </Col>
         </Row>

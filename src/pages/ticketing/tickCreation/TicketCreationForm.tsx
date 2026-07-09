@@ -15,6 +15,7 @@ import { ModuleProps } from '../../../types/Ticketing_drawer';
 import { renderField } from '../../../utils/fieldRenderer';
 import { Loader } from '../../../components/Loader';
 import API from '../../../api/api'
+import { getFullName } from '../../../utils/getEmployeeDetails';
 import { formatName } from '../../../utils/stringFormat';
 import { normalizeValues } from '../../../utils/valueNormalizer';
 import dayjs from "dayjs";
@@ -357,11 +358,11 @@ const TicketCreationForm = () => {
 
 
 
-  const getEmployeeName = (approverValue: string) =>
-    employees?.find(
-      (emp: vwAtKWEProps) =>
-        emp.EmployeeId?.toLowerCase() === approverValue.toLowerCase()
-    )?.FullName || "N/A";
+  // const getEmployeeName = (approverValue: string) =>
+  //   employees?.find(
+  //     (emp: vwAtKWEProps) =>
+  //       emp.EmployeeId?.toLowerCase() === approverValue.toLowerCase()
+  //   )?.FullName || "N/A";
 
   useEffect(() => {
     if(!userId && !userData) return;
@@ -457,8 +458,6 @@ const TicketCreationForm = () => {
                   );
                 })}
               </Form.Item>
-
-             
 
               <div>
                 {Object.entries(groupedFields).map(([groupName, fields]) => {
@@ -630,7 +629,7 @@ const TicketCreationForm = () => {
                           </>
                         ) : step.ApproverType === "Specific User" ? (
                           <>
-                            {getEmployeeName(step.ApproverValue)}{" "}
+                            {getFullName(step.ApproverValue, employees)}{" "}
                             <Tag color="green">{step.Description}</Tag>
                           </>
                           
