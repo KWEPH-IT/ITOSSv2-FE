@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import MainLayout from '../../MainLayout'
 import "../../../styles/userTicketDetails.css";
-import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message, Upload, Form, Timeline, Modal, Slider } from 'antd';
+import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message, Upload, Form, Timeline, Modal } from 'antd';
 import { StyledTable } from '../../../components/StyledTable';
 import { StyledSelect, StyledTextArea } from '../../../components/StyledComponents';
 import { useParams } from 'react-router-dom';
