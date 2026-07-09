@@ -1,23 +1,30 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import MainLayout from '../../MainLayout'
 import "../../../styles/userTicketDetails.css";
-import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message, Upload } from 'antd';
-import { StyledTextArea } from '../../../components/StyledComponents';
+import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message, Upload, Form, Timeline, Modal, Slider } from 'antd';
+import { StyledTable } from '../../../components/StyledTable';
+import { StyledSelect, StyledTextArea } from '../../../components/StyledComponents';
 import { useParams } from 'react-router-dom';
 import { useTickets } from '../../../hooks/ticketing/ticketing_hooks';
+import { useTicketCategs } from '../../../hooks/configuration/ticketCateg_hooks';
+import { TicketCustomFields, TicketCategProps, SelectOption } from '../../../types/TicketsCateg_drawer';
 import { Loader } from '../../../components/Loader';
 import { getInitials } from '../../../utils/stringFormat';
-import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined } from "@ant-design/icons";
-import { formatLabel, renderValue } from '../../../utils/valueNormalizer';
+import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined, CheckCircleFilled, TeamOutlined } from "@ant-design/icons";
+import { renderField } from '../../../utils/fieldRenderer';
+import { normalizeValues } from '../../../utils/valueNormalizer';
 import { TicketMessage } from '../../../types/Ticketing_drawer';
 import { handleLoggedAction } from '../../../utils/Logger';
 import { useAuth } from '../../../context/AuthContext';
+import { getEmployees } from '../../../hooks/configuration/vwAtKWE_hooks';
+import { getFullName } from '../../../utils/getEmployeeDetails';
 import API from '../../../api/api';
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { MenuProps } from 'antd';
 import relativeTime from "dayjs/plugin/relativeTime";
+import { vwAtKWEProps } from '../../../types/vwAtKWE_drawer';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -30,6 +37,13 @@ const TicketDetails = () => {
     const decoded_tn = tn ? atob(tn) : "";
 
     const { userId } = useAuth();
+    const { categ, loading : categLoading } = useTicketCategs();
+    const [ form ] = Form.useForm();
+    const [ enrichedFields, setEnrichedFields ] = useState<TicketCustomFields[]>([]);
+    const [ showModal, setShowModal ] = useState(false);
+    const [ isLoading, setIsLoading ] = useState(false);
+    const [ assignedTo, setAssignedTo ] = useState({empId: "", name: "", email: ""});
+    const { employees, loading : empLoading } = getEmployees();
 
     const filters = useMemo(() => ({
         ticketno: decoded_tn ?? undefined,
@@ -46,9 +60,117 @@ const TicketDetails = () => {
           new Date(b.DateSent).getTime() - new Date(a.DateSent).getTime()
       );
 
-    const fields = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
- 
-    const EXCLUDED_FIELDS = ["EmployeeId", "SystemName", "category"]
+    const category = categ?.filter((cat: TicketCategProps) => cat.SystemId === selectedTicket?.RequestType)
+    const fields = category?.[0]?.custom_fields;
+    const fieldsValue = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
+    const modules = selectedTicket?.modules || [];
+    const approvals = category?.[0]?.approvers || [];
+    
+    const highestApproval = approvals.reduce(
+        (max : any, current : any ) =>
+          current.LevelNo > max.LevelNo ? current : max,
+        approvals[0]
+      );
+    
+      
+    useEffect(() => {
+        if (!fields) return;
+      
+        const enrichFields = async () => {     
+          const tableCache: Record<string, SelectOption[]> = {};
+      
+          const enriched = await Promise.all(
+            fields.map(async (field : TicketCustomFields) => {
+              const fieldType = field.FieldType?.toLowerCase();
+      
+              if (
+                fieldType === "select" &&
+                field.SelectSourceType === "table" &&
+                field.TableName &&
+                field.ValueColumn &&
+                field.LabelColumn
+              ) {
+                const key = `${field.TableName}-${field.ValueColumn}-${field.LabelColumn}`;
+      
+                if (!tableCache[key]) {
+                  const res = await API.post<SelectOption[]>("/api/options", {
+                    TableName: field.TableName,
+                    ValueColumn: field.ValueColumn,
+                    LabelColumn: field.LabelColumn,
+                  });
+      
+                  tableCache[key] = res.data;
+                }
+      
+                return { ...field, options: tableCache[key] };
+              }
+      
+              if (
+                fieldType === "select" &&
+                field.SelectSourceType === "static" &&
+                field.StaticOptions
+              )
+              {
+                return {
+                  ...field,
+                  options: field.StaticOptions,
+                };
+              }
+      
+              return field;
+            })
+          );
+          setEnrichedFields(enriched);
+        };
+        enrichFields();
+    }, [fields]);
+
+    const groupedFields = useMemo(() => {
+        const groups: Record<string, TicketCustomFields[]> = {};
+    
+        enrichedFields.forEach(field => {
+            const value =
+                field.GroupName && field.IsRepeatable === "1"
+                    ? null // repeatable groups are handled by Form.List
+                    : fieldsValue?.[field.FieldName] ?? null;
+    
+            const fieldWithValue = {
+                ...field,
+                Value: value,
+            };
+    
+            const group = field.GroupName || "___NO_GROUP___";
+    
+            if (!groups[group]) {
+                groups[group] = [];
+            }
+    
+            groups[group].push(fieldWithValue);
+        });
+    
+        return groups;
+    }, [enrichedFields, fieldsValue]);
+    
+    
+    useEffect(() => {
+        if (!fields?.length || !fieldsValue) return;
+
+        const formValues = { ...fieldsValue };
+
+        fields.forEach((field:any) => {
+            if (field.FieldType === "Date") {
+                const value = formValues[field.FieldName];
+
+                if (value) {
+                    formValues[field.FieldName] = dayjs(value);
+                }
+            }
+        });
+
+        form.setFieldsValue(formValues);
+    }, [fields, fieldsValue, form]);
+
+    
     
     const handleTabChange = (key: string) => {
         if (key === "1") {
@@ -65,6 +187,13 @@ const TicketDetails = () => {
                 "Clicked ticket details."
               );
         }
+        else if(key === "3"){
+            handleLoggedAction(
+                userId!,
+                "TICKET DETAILS",
+                "Clicked ticket approval flow."
+              );
+        }
       };
 
     const items: MenuProps['items'] = [
@@ -77,8 +206,20 @@ const TicketDetails = () => {
           label: 'Cancel Request',
           key: '2',
           icon: <CloseOutlined />,
+          disabled: selectedTicket?.Status !== "Assigned",
         },
+        ...((selectedTicket?.CurrentLevel === highestApproval?.LevelNo || selectedTicket?.CurrentLevel === highestApproval?.LevelNo + 1)
+            ?   [
+                    {
+                        label: 'Assign Ticket',
+                        key: '3',
+                        icon: <TeamOutlined />
+                    }
+                ]
+            : []),
     ];
+        
+    
 
     const handleRemoveFile = (uid: string) => {
         setFileList((prev) => prev.filter((file) => file.uid !== uid));
@@ -167,12 +308,16 @@ const TicketDetails = () => {
                 message.error( e.response?.data?.message || "Failed to send message")
             }
         }
+        else if(info.key === "3"){
+            handleLoggedAction(userId!, 'TICKET ASSIGNMENT', "Clicked Assign ticket button")
+            setShowModal(true);
+        }
     }
 
     const menuProps = {
         items,
         onClick: handleMenuClick,
-      };
+    };
 
     const handleSubmitMessage = async() => {
         try{
@@ -207,10 +352,84 @@ const TicketDetails = () => {
                 e.response?.data?.message || "Failed to send message"
             );
         }
-    } 
+    }       
+
+    const handleAssignment = async() => {
+        try{
+
+            if(!assignedTo.empId){
+                return false;
+            }
+
+            setIsLoading(true);
+            const response = await API.post(`/api/assign`, {
+                ticket_no: decoded_tn,
+                categoryName: selectedTicket?.RequestName,
+                assignedToId: assignedTo.empId,
+                assignedToName: assignedTo.name,
+                assignedToEmail: assignedTo.email
+            })
+            message.success(response.data.message);
+            handleLoggedAction(userId!, 'TICKET ASSIGNMENT', "Assigned ticket to " + assignedTo.name )
+
+            await refetch();
+        }
+        catch(e: any){
+            console.error(e);
+            message.error( e.response?.data?.message || "Failed to send message")
+        }
+        finally{
+            setIsLoading(false);
+            setShowModal(false);
+        }
+    }
+
+    const onFinish = async (values: any) => {
+        try {
+      
+            setIsLoading(true);
+            const cleanedCustomFields = normalizeValues({ ...values });
+  
+            fields.forEach((field: TicketCustomFields) => {
+                if (field.FieldType === "File Uploader") {
+                delete cleanedCustomFields[field.FieldName];
+                }
+            });
+  
+            // FIX DATE FIELDS BEFORE STRINGIFY
+            Object.keys(cleanedCustomFields).forEach((key) => {
+                const value = cleanedCustomFields[key];
+    
+                if (typeof value === "string" && value.includes("T") && !isNaN(Date.parse(value))) {
+                cleanedCustomFields[key] = new Date(value)
+                    .toISOString()
+                    .split("T")[0]; // YYYY-MM-DD
+                }
+            });
+      
+            const formData = new FormData();
+        
+            formData.append("ticket_no", decoded_tn);
+            formData.append(
+                "custom_fields",
+                JSON.stringify(cleanedCustomFields)
+            );
+            //console.log([...formData.entries()]);
+      
+            const response = await API.put(`/api/ticket`,formData);
+            handleLoggedAction(userId!, 'TICKET DETAILS', 'Modified ticket details.')
+            message.success(response.data.message);
+        } catch (error: any) {
+          message.error(error.message);
+        } finally {
+          setIsLoading(false);
+        }
+    };
 
 
-    if (loading) return <Loader></Loader>
+    if (loading || isLoading || empLoading || categLoading) {
+  return <Loader />;
+}
     if (!ticket || ticket.length === 0) return <div>No ticket found</div>;
   return (
     <MainLayout title="">
@@ -260,23 +479,23 @@ const TicketDetails = () => {
                                     {selectedTicket?.Status}
                                 </Tag>
                             </Col>
-                    
-                           <Col>
-                                <Dropdown menu={menuProps}>
-                                    <Button 
-                                        style={{
-                                            borderRadius: 12,
-                                            height: 40,
-                                            paddingInline: 22,
-                                            fontWeight: 500,
-                                        }} 
-                                        icon={<DownOutlined />}>
-                                        Actions
-                                    </Button>
-                                </Dropdown>
-
-                                
-                            </Col>
+                            { selectedTicket.Status != 'Assigned' && selectedTicket.Status != 'For Closing' && selectedTicket.Status != 'Closed' ? (
+                                <Col>
+                                        <Dropdown menu={menuProps}>
+                                            <Button 
+                                                style={{
+                                                    borderRadius: 12,
+                                                    height: 40,
+                                                    paddingInline: 22,
+                                                    fontWeight: 500,
+                                                }} 
+                                                icon={<DownOutlined />}>
+                                                Actions
+                                            </Button>
+                                        </Dropdown>
+                                    </Col>
+                                ) : null 
+                            }
                         </Row>
                     </Col>
                 </Row>
@@ -324,9 +543,21 @@ const TicketDetails = () => {
                             {selectedTicket?.RequestForName}
                         </Text>
                     </Col>
+
+                    <Col flex="auto" />
+
+                    <Col>
+                        <Space>
+                            <Button type="primary" style={{ borderRadius: 12, height: 35 }}>
+                                Confirm
+                            </Button>
+                            <Button variant='outlined' color="red" style={{ borderRadius: 12, height: 35 }}>
+                                Re-assign
+                            </Button>
+                        </Space>
+                    </Col>
                 </Row>
             </Card>
-
 
             <Card className='card'>
             <Tabs
@@ -345,103 +576,108 @@ const TicketDetails = () => {
                     children: (
                     <div style={{ padding: 28 }}>
                         {/* MESSAGE INPUT */}
-                        <Row gutter={16} align="middle" style={{ marginBottom: 32 }}>
-                            <Col>
-                                <Avatar
-                                    size={48}
-                                    style={{
-                                        background: "#0F218B",
-                                        color: "#FFF",
-                                        fontWeight: 700,
-                                    }}
-                                >
-                                    {getInitials(selectedTicket?.RequestorName)}
-                                </Avatar>
-                            </Col>
 
-                            <Col flex="auto">
-                                <div
-                                    style={{
-                                    border: "1px solid #d9d9d9",
-                                    borderRadius: 14,
-                                    padding: 10,
-                                    }}
-                                >
-                                    {/* Attached file preview */}
-                                    {fileList.length > 0 && (
-                                    <div style={{ marginBottom: 8 }}>
-                                        {fileList.map((file) => (
-                                        <div
-                                            key={file.uid}
-                                            style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            background: "#f0f0f0",
-                                            padding: "4px 10px",
-                                            borderRadius: 10,
-                                            marginRight: 6,
-                                            fontSize: 12,
-                                            }}
-                                        >
-                                            📎 {file.name}
+                        { ((selectedTicket.Status == 'On Process' || selectedTicket.Status != 'For Closing') && (selectedTicket.RequestFor === userId || selectedTicket.AssignedTo === userId)) ? (
+                            <Row gutter={16} align="middle" style={{ marginBottom: 32 }}>
+                                <Col>
+                                    <Avatar
+                                        size={48}
+                                        style={{
+                                            background: "#0F218B",
+                                            color: "#FFF",
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        {getInitials(selectedTicket?.RequestorName)}
+                                    </Avatar>
+                                </Col>
 
-                                            <span
-                                                onClick={() => handleRemoveFile(file.uid)}
+                                <Col flex="auto">
+                                    <div
+                                        style={{
+                                        border: "1px solid #d9d9d9",
+                                        borderRadius: 14,
+                                        padding: 10,
+                                        }}
+                                    >
+                                        {/* Attached file preview */}
+                                        {fileList.length > 0 && (
+                                        <div style={{ marginBottom: 8 }}>
+                                            {fileList.map((file) => (
+                                            <div
+                                                key={file.uid}
                                                 style={{
-                                                    marginLeft: 8,
-                                                    cursor: "pointer",
-                                                    fontWeight: "bold",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                background: "#f0f0f0",
+                                                padding: "4px 10px",
+                                                borderRadius: 10,
+                                                marginRight: 6,
+                                                fontSize: 12,
                                                 }}
-                                                >
-                                                ×
-                                            </span>
+                                            >
+                                                📎 {file.name}
+
+                                                <span
+                                                    onClick={() => handleRemoveFile(file.uid)}
+                                                    style={{
+                                                        marginLeft: 8,
+                                                        cursor: "pointer",
+                                                        fontWeight: "bold",
+                                                    }}
+                                                    >
+                                                    ×
+                                                </span>
+                                            </div>
+                                            ))}
                                         </div>
-                                        ))}
+                                        )}
+
+                                        {/* Text area */}
+                                        <StyledTextArea
+                                        placeholder="Type your message here..."
+                                        autoSize={{ minRows: 2, maxRows: 3 }}
+                                        value={mensahe}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        bordered={false}
+                                        style={{
+                                            padding: 0,
+                                            fontSize: 12,
+                                        }}
+                                        />
                                     </div>
-                                    )}
+                                </Col>
 
-                                    {/* Text area */}
-                                    <StyledTextArea
-                                    placeholder="Type your message here..."
-                                    autoSize={{ minRows: 2, maxRows: 3 }}
-                                    value={mensahe}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                    bordered={false}
-                                    style={{
-                                        padding: 0,
-                                        fontSize: 12,
-                                    }}
-                                    />
-                                </div>
-                            </Col>
+                                <Col>
+                                    <Button type="primary" icon={<SendOutlined />} size="large" onClick={handleSubmitMessage}
+                                        style={{
+                                            height: 52,
+                                            paddingInline: 28,
+                                            borderRadius: 14,
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        Post
+                                    </Button>
+                                </Col>
+                                <Col>
+                                    <Upload {...uploadProps} showUploadList={false}>
+                                        <Button
+                                        icon={<UploadOutlined />}
+                                        size="large"
+                                        style={{
+                                            height: 52,
+                                            paddingInline: 28,
+                                            borderRadius: 14,
+                                            fontWeight: 600,
+                                        }}
+                                        />
+                                    </Upload>
+                                </Col>
+                            </Row>
+                            ) : null
+                        }
 
-                            <Col>
-                                <Button type="primary" icon={<SendOutlined />} size="large" onClick={handleSubmitMessage}
-                                    style={{
-                                        height: 52,
-                                        paddingInline: 28,
-                                        borderRadius: 14,
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    Post
-                                </Button>
-                            </Col>
-                            <Col>
-                                <Upload {...uploadProps} showUploadList={false}>
-                                    <Button
-                                    icon={<UploadOutlined />}
-                                    size="large"
-                                    style={{
-                                        height: 52,
-                                        paddingInline: 28,
-                                        borderRadius: 14,
-                                        fontWeight: 600,
-                                    }}
-                                    />
-                                </Upload>
-                            </Col>
-                        </Row>
                         
                         {/* TIMELINE */}
                         <div style={{ position: "relative", paddingLeft: 30,  borderLeft: "2px solid #E5E7EB", }}>
@@ -491,7 +727,7 @@ const TicketDetails = () => {
                                                             key={file.FileName}
                                                             onClick={() =>
                                                                 window.open(
-                                                                    `http://127.0.0.1:5000/api${file.FilePath}`,
+                                                                    `http://127.0.0.1:5000/api${file.FilePath}`,  //to change for production
                                                                     "_blank"
                                                                 )
                                                             }
@@ -571,21 +807,190 @@ const TicketDetails = () => {
                       ),
                     children: (
                     <div style={{ padding: 28 }}>
-                        
-                            <Row gutter={[16, 16]}>
-                            {Object.entries(fields)
-                                .filter(([key]) => !EXCLUDED_FIELDS.includes(key))
-                                .map(([key, value]) => (
-                                    <Col span={12} key={key}>
-                                    <Text type="secondary">{formatLabel(key)}</Text>
-                                    <div style={{ fontWeight: 500 }}>{renderValue(value)}</div>
-                                    </Col>
-                                ))}
-                                                            
-                            </Row>
+                        <Form form={form} layout='vertical' onFinish={onFinish}>
+
+                            {Object.entries(groupedFields).map(([groupName, fields]) => {
+                            
+                                // ✅ CASE 1: NORMAL FIELDS (no group)
+                                if (groupName === "___NO_GROUP___") {
+                                    return fields.map(field => (
+                                    <Form.Item
+                                        key={`${groupName}-${field.FieldName}`}
+                                        name={field.FieldName}
+                                        label={field.FieldLabel}
+                                        rules={[{ required: true }]}
+                                        {...(
+                                        field.FieldType === "File"
+                                            ? {
+                                                valuePropName: "fileList",
+                                                getValueFromEvent: (e: any) => e?.fileList,
+                                            }
+                                            : {}
+                                        )}
+                                        
+                                    >
+                                        {renderField(field)}
+                                    </Form.Item>
+                                    ));
+                                }
+
+                                // ✅ CASE 2: GROUPED FIELDS
+                                const isRepeatable = fields[0].IsRepeatable === "1";
+
+                                if (!isRepeatable) {
+                                    return (
+                                    <Card key={groupName} title={groupName} style={{ marginBottom: 16 }}>
+                                        {fields.map(field => (
+                                        <Form.Item
+                                            key={`${groupName}-${field.FieldName}`}
+                                            name={[groupName, field.FieldName]}
+                                            label={field.FieldLabel}
+                                            rules={[{ required: true }]}
+                                        >
+                                            {renderField(field)}
+                                        </Form.Item>
+                                        ))}
+                                    </Card>
+                                    );
+                                }
+
+                                // 🔥 CASE 3: REPEATABLE GROUP
+                                return (
+                                    <Form.List key={groupName} name={groupName}>
+                                    {(groupItems, { add, remove }) => (
+                                        <>
+                                        {groupItems.map(item => (
+                                            <Card key={item.key} style={{ marginBottom: 16 }}>
+                                            
+                                            {fields.map(field => (
+                                                <Form.Item
+                                                key={field.FieldName}
+                                                name={[item.name, field.FieldName]}
+                                                label={field.FieldLabel}
+                                                rules={[{ required: true }]}
+                                                >
+                                                {renderField(field)}
+                                                </Form.Item>
+                                            ))}
+
+                                            <Button danger onClick={() => remove(item.name)}>
+                                                Remove
+                                            </Button>
+                                            </Card>
+                                        ))}
+
+                                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                                            <Button type="dashed" onClick={() => add()}>
+                                            + Add {groupName}
+                                            </Button>
+                                        </div>
+                                        </>
+                                    )}
+                                    </Form.List>
+                                );
+                            })}
+
+                            {
+                                modules?.length > 0 ? (
+                                    <StyledTable
+                                        data={modules}
+                                        rowKey="ModuleName"
+                                        pagination={false}
+                                        columns={[
+                                            {
+                                                title: "Module",
+                                                dataIndex: "ModuleName",
+                                                key: "ModuleName"
+                                            },
+                                            {
+                                                title: "Access",
+                                                render: () => (
+                                                    <Tag color="orange">
+                                                    Requested
+                                                    </Tag>
+                                                )
+                                            },
+                                        ]}
+                                        />
+                
+                                ) :
+                                null
+                            }
+                            {(selectedTicket.Status === 'On Process' && selectedTicket.AssignedTo === userId) ? 
+                                (
+                                    <Button type="primary" block htmlType='submit'>
+                                        Save Changes
+                                    </Button>
+                                ): null
+                            }
+                        </Form>
                       
                     </div>
                     ),
+                },
+
+                {
+                    key: "3",
+                    label: (
+                        <span style={{ fontSize: 14 }}>
+                          Approval Flow
+                        </span>
+                      ),
+                      children: (
+                        <div style={{ padding: 28 }}>
+                            <Timeline
+                                items={approvals.map((step:any, index:any) => ({
+                                dot: <CheckCircleFilled className="timeline-dot" />,
+                                children: (
+                                    <div className="timeline-item" style={{ letterSpacing: 0.7 }}>
+                                    <div className="timeline-title">
+                                    {
+                                        step.ApproverType === "Dynamic Superior" ? (
+                                        <>
+                                            {getFullName(selectedTicket?.ISId, employees)}{" "}
+                                            <Tag color="orange">{step.Description}</Tag>
+                                        </>
+                                        ) : step.ApproverType === "Dynamic Manager" ? (
+                                        <>
+                                            {getFullName(selectedTicket?.DHId, employees)}{" "}
+                                            <Tag color="blue">{step.Description}</Tag>
+                                        </>
+                                        ) : step.ApproverType === "Specific User" ? (
+                                        <>
+                                            {getFullName(step.ApproverValue, employees)}{" "}
+                                            <Tag color="green">{step.Description}</Tag>
+                                        </>
+                                        
+                                        ) : (
+                                        ""
+                                        )
+                                    }
+                                    </div>
+                                    <div className="timeline-sub">
+                                        <Space>
+                                        Step {index + 1} 
+                                        {
+                                        step.ApproverType === "Dynamic Superior" ? (
+                                            <span style={{  color: "#000" }}>Immediate Superior</span>
+                                        ) : step.ApproverType === "Dynamic Manager" ? (
+                                            <span style={{  color: "#000" }}>Department Head</span>
+                                        ) : step.ApproverType === "Role" ? (
+                                            <span style={{ color: "#000" }}>{step.Description}</span>
+                                        ) : (
+                                            ""
+                                        )
+                                        }
+                                        </Space>
+                                    </div>
+                                    </div>
+                                ),
+                                }))}
+                            />
+                        </div>
+
+
+                    )
+
                 },
 
               
@@ -595,6 +1000,39 @@ const TicketDetails = () => {
             </Card>
         </div>
         </div>
+
+        <Modal
+            title="Ticket Assignment"
+            closable={{ 'aria-label': 'Custom Close Button' }}
+            open={showModal}
+            onOk={handleAssignment}
+            onCancel={() => setShowModal(false)}>
+           
+           <Row>
+                <Col span={24}>
+                    <StyledSelect<string> style={{ width: "100%", fontSize: "12px" }} placeholder="Please select ..." 
+                         onChange={(value) => {
+                            const emp = employees.find((e: vwAtKWEProps) => e.EmployeeId === value);
+                            setAssignedTo({empId: emp?.EmployeeId, name: emp?.FullName, email: emp?.EmailAddress})
+                          }} 
+                        >
+                        {employees
+                            .filter((emp: vwAtKWEProps) => emp.Department === "IT")
+                            .map((emp: vwAtKWEProps) => (
+                            <StyledSelect.Option 
+                                key={emp.EmployeeId}
+                                value={emp.EmployeeId}
+                                style={{ fontSize: "12px" , letterSpacing: 0.7 }}
+                            >
+                                {emp.FullName}
+                            </StyledSelect.Option>
+                        ))}
+                    </StyledSelect>
+                </Col>
+            </Row>
+
+           
+    </Modal> 
     </MainLayout>
   )
 }

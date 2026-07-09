@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom';
 import { Layout, Avatar, Dropdown, message, Button, Space, Typography, Divider } from "antd";
-import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
+import { MenuFoldOutlined, MenuUnfoldOutlined, BellOutlined } from "@ant-design/icons";
 import { Loader } from '../components/Loader'; 
 import "../styles/header.css"
 import { formatName, getInitials } from '../utils/stringFormat';
@@ -85,7 +85,12 @@ const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, user
         <Link to="/ticketList" onClick={() => handleLoggedAction(userId, "REQUEST OVERVIEW", "Clicked list of requests")}>
           <Button type='link' style={{color:dept === 'IT' ? '#000' : '#FFFF', fontWeight: 600 }}>Requests</Button>
         </Link>
-        {/* <BellFilled style={{ fontSize: 18, cursor: "pointer", color: "#8c8c8c" }} /> */}
+        {dept === 'IT' ?
+          <Link to="/ticketDashboard" onClick={() => handleLoggedAction(userId, "SERVICE DASHBOARD", "Clicked notification bell")}>
+            <BellOutlined style={{ fontSize: 18, cursor: "pointer", }} />
+          </Link>
+          : null
+        }
 
         {/* Separator line */}
         <Divider type="vertical" style={{ height: "20px", margin: 0 }} />

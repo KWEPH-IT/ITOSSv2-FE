@@ -12,6 +12,7 @@ export interface TicketProps {
     RequestForName: string,
     DateCreated: string,
     DateModified: string,
+    AssignedTo: string,
     custom_fields?: {
         CustomFields?: any[]
     }[],
