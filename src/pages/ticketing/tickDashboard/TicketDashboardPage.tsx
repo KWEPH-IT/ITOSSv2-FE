@@ -206,7 +206,15 @@ const TicketDashboardPage = () => {
         { title: "Assigned To", key: "AssignedTo", dataIndex: "AssignedTo", 
           render: (assignedTo: string) => (
             assignedTo  ? (
-              <Tag color={getTagColor(assignedTo)} style={{ fontSize: '10px'}}>
+              <Tag color={getTagColor(assignedTo)} 
+                style={{
+                  fontSize: 10,
+                  maxWidth: 120,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                >
                 {getFullName(assignedTo, employees)}
               </Tag>
               ) : null
