@@ -356,14 +356,6 @@ const TicketCreationForm = () => {
     return groups;
   }, [customFields]);
 
-
-
-  // const getEmployeeName = (approverValue: string) =>
-  //   employees?.find(
-  //     (emp: vwAtKWEProps) =>
-  //       emp.EmployeeId?.toLowerCase() === approverValue.toLowerCase()
-  //   )?.FullName || "N/A";
-
   useEffect(() => {
     if(!userId && !userData) return;
       handleApprover(userData?.DepartmentHead, userData?.DeptHeadId, userData?.ImmediateSupervisor, userData?.SuperiorId)

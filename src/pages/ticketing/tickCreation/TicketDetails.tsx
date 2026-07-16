@@ -10,7 +10,7 @@ import { useTicketCategs } from '../../../hooks/configuration/ticketCateg_hooks'
 import { TicketCustomFields, TicketCategProps, SelectOption } from '../../../types/TicketsCateg_drawer';
 import { Loader } from '../../../components/Loader';
 import { getInitials } from '../../../utils/stringFormat';
-import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined, CheckCircleFilled, TeamOutlined } from "@ant-design/icons";
+import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined, CheckCircleFilled, TeamOutlined, CheckOutlined, SwapOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { renderField } from '../../../utils/fieldRenderer';
 import { normalizeValues } from '../../../utils/valueNormalizer';
 import { TicketMessage } from '../../../types/Ticketing_drawer';
@@ -59,7 +59,7 @@ const TicketDetails = () => {
         (a: TicketMessage, b: TicketMessage) =>
           new Date(b.DateSent).getTime() - new Date(a.DateSent).getTime()
       );
-
+    
     const category = categ?.filter((cat: TicketCategProps) => cat.SystemId === selectedTicket?.RequestType)
     const fields = category?.[0]?.custom_fields;
     const fieldsValue = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
@@ -197,18 +197,22 @@ const TicketDetails = () => {
       };
 
     const items: MenuProps['items'] = [
-        {
-          label: 'Re-send Request',
-          key: '1',
-          icon: <SendOutlined />,
-        },
+        ...((selectedTicket?.CurrentLevel < highestApproval?.LevelNo)
+        ?   [
+                {
+                    label: 'Re-send Ticket',
+                    key: '1',
+                    icon: <TeamOutlined />
+                }
+            ]
+        : []),
         {
           label: 'Cancel Request',
           key: '2',
           icon: <CloseOutlined />,
           disabled: selectedTicket?.Status !== "Assigned",
         },
-        ...((selectedTicket?.CurrentLevel === highestApproval?.LevelNo || selectedTicket?.CurrentLevel === highestApproval?.LevelNo + 1)
+        ...((selectedTicket?.CurrentLevel >= highestApproval?.LevelNo )
             ?   [
                     {
                         label: 'Assign Ticket',
@@ -384,6 +388,55 @@ const TicketDetails = () => {
         }
     }
 
+    const handleConfirm = async() => {
+        try{
+            setIsLoading(true);
+            
+            const response = await API.post(`/api/confirmassign`, {
+                ticket_no: decoded_tn
+            })
+
+            message.success(response.data.message)
+            handleLoggedAction(userId!, 'TICKET ASSIGNMENT', "Confirmed ticket Assignment " + decoded_tn )
+
+            await refetch()
+            
+        }
+        catch(e: any){
+            console.error(e);
+            message.error( e.response?.data?.message || "Failed to confirmed ticket")
+        }
+        finally{
+            setIsLoading(false);
+        }
+    }
+
+    const handleInhouseProcess = async() => {
+        try{
+            setIsLoading(true);
+
+            const response = await API.post(`/api/process`, {
+                ticket_no: decoded_tn,
+                employeeId: selectedTicket.RequestFor,
+                inhouse: selectedTicket.InhouseName,
+                modules,
+                fieldsValue
+            })
+
+            message.success(response.data.message)
+            handleLoggedAction(userId!, 'TICKET ASSIGNMENT', "Procesed inhouse system access request " + decoded_tn )
+
+            await refetch()
+        }
+        catch(e: any){
+            console.error(e);
+            message.error( e.response?.data?.message || "Failed to process request")
+        }
+        finally{
+            setIsLoading(false)
+        }
+    }
+
     const onFinish = async (values: any) => {
         try {
       
@@ -481,19 +534,19 @@ const TicketDetails = () => {
                             </Col>
                             { selectedTicket.Status != 'Assigned' && selectedTicket.Status != 'For Closing' && selectedTicket.Status != 'Closed' ? (
                                 <Col>
-                                        <Dropdown menu={menuProps}>
-                                            <Button 
-                                                style={{
-                                                    borderRadius: 12,
-                                                    height: 40,
-                                                    paddingInline: 22,
-                                                    fontWeight: 500,
-                                                }} 
-                                                icon={<DownOutlined />}>
-                                                Actions
-                                            </Button>
-                                        </Dropdown>
-                                    </Col>
+                                    <Dropdown menu={menuProps}>
+                                        <Button 
+                                            style={{
+                                                borderRadius: 12,
+                                                height: 40,
+                                                paddingInline: 22,
+                                                fontWeight: 500,
+                                            }} 
+                                            icon={<DownOutlined />}>
+                                            Actions
+                                        </Button>
+                                    </Dropdown>
+                                </Col>
                                 ) : null 
                             }
                         </Row>
@@ -545,17 +598,47 @@ const TicketDetails = () => {
                     </Col>
 
                     <Col flex="auto" />
-
-                    <Col>
-                        <Space>
-                            <Button type="primary" style={{ borderRadius: 12, height: 35 }}>
-                                Confirm
+                    { selectedTicket.AssignedTo === userId && selectedTicket.Status === "Assigned" ? (
+                        <Col>
+                            <Space>
+                                <Button type="primary" onClick={handleConfirm} style={{
+                                        height: 42,
+                                        padding: "0 22px",
+                                        borderRadius: 10,
+                                        fontWeight: 600,
+                                        boxShadow: "0 4px 12px rgba(22,119,255,.25)",
+                                    }}
+                                    icon={<CheckOutlined />}>
+                                    Confirm
+                                </Button>
+                                <Button variant='outlined' onClick={()=>setShowModal(true)} danger style={{
+                                        height: 42,
+                                        padding: "0 22px",
+                                        borderRadius: 10,
+                                        fontWeight: 600,
+                                    }}
+                                    icon={<SwapOutlined />}>
+                                    Re-assign
+                                </Button>
+                            </Space>
+                        </Col>
+                    ): selectedTicket.Status == "For Closing" ? (
+                        <Col>
+                            <Button
+                                color="green"
+                                variant="solid"
+                                icon={<CheckCircleOutlined />}
+                                style={{
+                                    height: 42,
+                                    padding: "0 22px",
+                                    borderRadius: 10,
+                                    fontWeight: 600,
+                                }}
+                            >
+                                Close Ticket
                             </Button>
-                            <Button variant='outlined' color="red" style={{ borderRadius: 12, height: 35 }}>
-                                Re-assign
-                            </Button>
-                        </Space>
-                    </Col>
+                        </Col>
+                    ) : null }
                 </Row>
             </Card>
 
@@ -577,7 +660,7 @@ const TicketDetails = () => {
                     <div style={{ padding: 28 }}>
                         {/* MESSAGE INPUT */}
 
-                        { ((selectedTicket.Status == 'On Process' || selectedTicket.Status != 'For Closing') && (selectedTicket.RequestFor === userId || selectedTicket.AssignedTo === userId)) ? (
+                        { ((selectedTicket.Status == 'On Process' || selectedTicket.Status == 'For Closing') && (selectedTicket.RequestFor === userId || selectedTicket.AssignedTo === userId)) ? (
                             <Row gutter={16} align="middle" style={{ marginBottom: 32 }}>
                                 <Col>
                                     <Avatar
@@ -920,6 +1003,14 @@ const TicketDetails = () => {
                                 (
                                     <Button type="primary" block htmlType='submit'>
                                         Save Changes
+                                    </Button>
+                                ): null
+                            }
+
+                            {(selectedTicket.InhouseName && selectedTicket.Status === 'On Process' && selectedTicket.AssignedTo === userId) ? 
+                                (
+                                    <Button variant="outlined" onClick={handleInhouseProcess} color='orange' block style={{ marginTop: 10 }}>
+                                        Process Request
                                     </Button>
                                 ): null
                             }
