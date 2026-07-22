@@ -79,7 +79,7 @@ const TicketCategoriesForm: React.FC<DrawerProps & {record? : TicketCategProps |
                 systemId: record?.SystemId, 
                 name: values.Name,
                 ParentId: values.ParentId? values.ParentId : null,
-                Inhouse: values.InhouseSystem? values.InhouseSystem : null,
+                Inhouse: values.Inhouse? values.Inhouse : null,
                 Description: values.Description? values.Description : null,
                 CustomFields: formattedCustomFields,
                 ApproverLevel: formattedApprovalLevel
@@ -149,9 +149,9 @@ const TicketCategoriesForm: React.FC<DrawerProps & {record? : TicketCategProps |
                         </Form.Item>
                     </Col>
 
-                        { parent?.includes("In-house") && (
+                        { parent?.includes("In-house") || record?.Inhouse && (
                         <Col span={24}>
-                          <Form.Item label="Choose In-house System" name="InhouseSystem">
+                          <Form.Item label="Choose In-house System" name="Inhouse">
                             <StyledSelect >
                                 { 
                                     systems?.map((sys: SystemProfileProps) => (

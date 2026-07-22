@@ -156,7 +156,7 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
 
                 <Row gutter={12}>
                     <Col span={6}>
-                        <StyledFormItem name="DBTableName" label="Database Name" >
+                        <StyledFormItem name="DBTableName" label="Database Table Name" >
                             <StyledInput  />
                         </StyledFormItem>
                     </Col>

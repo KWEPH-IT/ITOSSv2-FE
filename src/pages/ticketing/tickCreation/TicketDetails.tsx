@@ -10,7 +10,7 @@ import { useTicketCategs } from '../../../hooks/configuration/ticketCateg_hooks'
 import { TicketCustomFields, TicketCategProps, SelectOption } from '../../../types/TicketsCateg_drawer';
 import { Loader } from '../../../components/Loader';
 import { getInitials } from '../../../utils/stringFormat';
-import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined, CheckCircleFilled, TeamOutlined, CheckOutlined, SwapOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined, CheckCircleFilled, TeamOutlined, CheckOutlined, SwapOutlined, CheckCircleOutlined, DownloadOutlined  } from "@ant-design/icons";
 import { renderField } from '../../../utils/fieldRenderer';
 import { normalizeValues } from '../../../utils/valueNormalizer';
 import { TicketMessage } from '../../../types/Ticketing_drawer';
@@ -61,6 +61,7 @@ const TicketDetails = () => {
       );
     
     const category = categ?.filter((cat: TicketCategProps) => cat.SystemId === selectedTicket?.RequestType)
+    const parent = category?.[0]?.ParentId;
     const fields = category?.[0]?.custom_fields;
     const fieldsValue = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
     const modules = selectedTicket?.modules || [];
@@ -437,6 +438,55 @@ const TicketDetails = () => {
         }
     }
 
+    const handleGenerate = async() =>{
+        try{
+            setIsLoading(true)
+            const response = await API.post(
+                `/api/${decoded_tn}/generateFile`,
+                {},
+                { responseType: "blob" }
+            );
+        
+            const url = window.URL.createObjectURL(response.data);
+        
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${decoded_tn}.xlsx`;
+            link.click();
+        
+            URL.revokeObjectURL(url);
+            handleLoggedAction(userId!, 'TICKET DETAILS', "Generated Excel file" )
+        }
+        catch (error: any) {
+            message.error(error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    
+    const handleClosing = async() => {
+        try{
+            setIsLoading(true)
+            const response = await API.post(`/api/ticket/close`, {
+                ticketno : decoded_tn
+            })
+            
+            message.success(response.data.message)
+            if(selectedTicket.Status === "For Closing")
+                handleLoggedAction(userId!, 'TICKET DETAILS', "Closed ticket " + decoded_tn )
+            else
+                handleLoggedAction(userId!, 'TICKET DETAILS', "Marked as resolved " + decoded_tn )
+            await refetch()
+        }
+        catch(e:any){
+            message.error(e.message)
+        }
+        finally{
+            setIsLoading(false)
+        }
+    }
+
+
     const onFinish = async (values: any) => {
         try {
       
@@ -622,11 +672,38 @@ const TicketDetails = () => {
                                 </Button>
                             </Space>
                         </Col>
-                    ): selectedTicket.Status == "For Closing" ? (
+                    ): selectedTicket.Status === "On Process" && selectedTicket.AssignedTo === userId && parent === 2 ? (
+                        <Col>
+                            <Space>
+                                <Button type="primary" onClick={handleGenerate} disabled={isLoading} style={{
+                                        height: 42,
+                                        padding: "0 22px",
+                                        borderRadius: 10,
+                                        fontWeight: 600,
+                                        boxShadow: "0 4px 12px rgba(22,119,255,.25)",
+                                    }}
+                                    icon={<DownloadOutlined />}>
+                                    {isLoading? 'Generating ...' : 'Generate Excel' }
+                                </Button>
+
+                                <Button variant='solid' color='green' onClick={handleClosing} style={{
+                                        height: 42,
+                                        padding: "0 22px",
+                                        borderRadius: 10,
+                                        fontWeight: 600,
+                                        boxShadow: "0 4px 12px rgba(22,119,255,.25)",
+                                    }}
+                                    icon={<CheckCircleOutlined />}>
+                                    Mark as Resolved
+                                </Button>
+                            </Space>
+                        </Col>
+                    ): selectedTicket.Status === "For Closing" && selectedTicket.RequestorId === userId ? (
                         <Col>
                             <Button
                                 color="green"
                                 variant="solid"
+                                onClick={handleClosing}
                                 icon={<CheckCircleOutlined />}
                                 style={{
                                     height: 42,
