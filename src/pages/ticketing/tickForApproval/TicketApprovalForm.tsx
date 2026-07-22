@@ -33,7 +33,7 @@ const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> 
     const modules = record?.modules?.map((m: any) => m.ModuleName) || [];
     
     const EXCLUDED_FIELDS = ["EmployeeId", "SystemName", "category"]
-
+    console.log(fields);
     const handleApprove = async() => {
         try{
             if(!record){
@@ -92,7 +92,7 @@ const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> 
     <Drawer
         open={isDrawerOpen}
         onClose={closeDrawer}
-        width={700}
+        width={1000}
         extra={
             <Space>
               <Button color="danger" variant="outlined" onClick={() => setShowModal(true)}><CloseOutlined/> Decline</Button>
@@ -124,10 +124,15 @@ const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> 
                 {
                 <Descriptions column={1} bordered size="small" className="small-desc">
                     {Object.entries(fields)
-                    .filter(([key]) => !EXCLUDED_FIELDS.includes(key))
-                    .map(([key, value]) => (
-                        <Descriptions.Item key={key} label={formatLabel(key)}>{renderValue(value)} </Descriptions.Item>
-                    ))}
+                        .filter(([key]) => !EXCLUDED_FIELDS.includes(key))
+                        .map(([key, value]) => (
+                            <Descriptions.Item
+                                key={key}
+                                label={formatLabel(key)}
+                            >
+                                {renderValue(value)}
+                            </Descriptions.Item>
+                        ))}
                 </Descriptions>
                 }
             </div>
