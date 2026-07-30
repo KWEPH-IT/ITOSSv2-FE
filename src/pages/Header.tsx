@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom';
-import { Layout, Avatar, Dropdown, message, Button, Space, Typography, Divider } from "antd";
+import { Layout, Avatar, Dropdown, message, Button, Space, Typography, Divider, Badge, Popover } from "antd";
 import { MenuFoldOutlined, MenuUnfoldOutlined, BellOutlined } from "@ant-design/icons";
 import { Loader } from '../components/Loader'; 
 import "../styles/header.css"
@@ -8,6 +8,8 @@ import { formatName, getInitials } from '../utils/stringFormat';
 import API from '../api/api';
 import { handleLoggedAction } from '../utils/Logger';
 const { Header } = Layout;
+import { useApprovalCounter } from '../utils/approvalCounter';
+import ApprovalList from './ApprovalPopOver';
 
 interface HeaderProps {
   collapsed: boolean;
@@ -21,6 +23,7 @@ interface HeaderProps {
 const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, userName, dept, userGroup}) => {
   const displayName = formatName(userName);
   const [isLoading, setIsLoading] = useState(false);
+  const { approvalCount, pendingApprovals }  = useApprovalCounter();
 
 
   const handleLogout = async() =>{
@@ -86,9 +89,19 @@ const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, user
           <Button type='link' style={{color:dept === 'IT' ? '#000' : '#FFFF', fontWeight: 600 }}>Requests</Button>
         </Link>
         {dept === 'IT' ?
-          <Link to="/ticketDashboard" onClick={() => handleLoggedAction(userId, "SERVICE DASHBOARD", "Clicked notification bell")}>
-            <BellOutlined style={{ fontSize: 18, cursor: "pointer", }} />
-          </Link>
+          // <Link to="/ticketDashboard" onClick={() => handleLoggedAction(userId, "SERVICE DASHBOARD", "Clicked notification bell")}>
+            <Popover
+              trigger="click"
+              placement="bottomRight"
+              content={
+                <ApprovalList tickets={pendingApprovals} />
+              }
+          >
+              <Badge count={approvalCount}>
+                  <BellOutlined />
+              </Badge>
+          </Popover>
+          // </Link>
           : null
         }
 

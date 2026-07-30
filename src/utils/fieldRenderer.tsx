@@ -10,6 +10,8 @@ const isReadonly = (field: TicketCustomFields) => {
   return mode === "generated" || mode === "actual";
 };
 
+
+
 export const renderField = (field: TicketCustomFields) => {
   const readOnly = isReadonly(field);
 
@@ -23,7 +25,14 @@ export const renderField = (field: TicketCustomFields) => {
         </Upload>
       );
     case "Text":
-      return <StyledInput readOnly={readOnly}/>;
+      if (field.FieldName == "GroupName")
+        return <StyledInput addonBefore="KWEPH - Group Email -" 
+              readOnly={readOnly} />
+      else if (field.FieldName == "GroupEmailAddress")
+        return <StyledInput addonAfter=".kweph@kwe.com" 
+          readOnly={readOnly} />
+      else
+        return <StyledInput readOnly={readOnly}/>;
     case "Number":
       return <StyledNumber style={{ width: "100%" }} />;
     case "Date":
@@ -34,9 +43,12 @@ export const renderField = (field: TicketCustomFields) => {
       // if options are already present
       if (field.options) {
         return (
-          <StyledSelect>
-            {field.options.map((opt: SelectOption) => (
-              <Select.Option key={opt.value} value={opt.value}>
+          <StyledSelect
+            showSearch
+            optionFilterProp="label"
+          >
+            {field.options.map((opt: SelectOption, index) => (
+              <Select.Option key={index} label={opt.label} value={opt.value}>
                 {opt.label}
               </Select.Option>
             ))}
@@ -52,6 +64,9 @@ export const renderField = (field: TicketCustomFields) => {
       return (
         <ReactQuill
           theme="snow"
+          value = ""
+          onChange={() => {}}
+          
         />
       );
     case "Textarea":

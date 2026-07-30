@@ -33,7 +33,6 @@ const TicketApprovalForm: React.FC<DrawerProps & {record?: TicketProps | null}> 
     const modules = record?.modules?.map((m: any) => m.ModuleName) || [];
     
     const EXCLUDED_FIELDS = ["EmployeeId", "SystemName", "category"]
-    console.log(fields);
     const handleApprove = async() => {
         try{
             if(!record){

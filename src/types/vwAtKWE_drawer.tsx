@@ -1,6 +1,7 @@
 export interface vwAtKWEProps {
     EmployeeId: string,
     FullName:string,
+    CompleteName:string,
     FirstName: string,
     LastName:string,
     EmailAddress: string,

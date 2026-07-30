@@ -29,7 +29,7 @@ const Home = () => {
     if (!ticket) return [];
   
     return ticket.filter(t =>
-      t.Status?.includes("Approved") &&
+      t.Status?.includes("Assigned") &&
       (t.AssignedTo?.trim())
     );
   }, [ticket]);

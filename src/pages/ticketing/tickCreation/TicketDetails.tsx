@@ -67,12 +67,14 @@ const TicketDetails = () => {
     const modules = selectedTicket?.modules || [];
     const approvals = category?.[0]?.approvers || [];
     
-    const highestApproval = approvals.reduce(
-        (max : any, current : any ) =>
-          current.LevelNo > max.LevelNo ? current : max,
-        approvals[0]
-      );
-    
+    const highestLevel =
+    approvals.length > 0
+      ? approvals.reduce((max: any, current: any) =>
+          current.LevelNo > max.LevelNo ? current : max
+        )
+      : null;
+
+    const highestApproval = highestLevel?.LevelNo;
       
     useEffect(() => {
         if (!fields) return;
@@ -166,6 +168,34 @@ const TicketDetails = () => {
                     formValues[field.FieldName] = dayjs(value);
                 }
             }
+            
+            if (field.FieldName === "GroupName"){
+                formValues[field.FieldName] =  formValues.GroupName.replace(
+                    "KWEPH - Group Email - ",
+                    ""
+                );
+            }
+
+            if (field.FieldName === "GroupEmailAddress"){
+                formValues[field.FieldName] =  formValues.GroupEmailAddress.replace(
+                    ".kweph@kwe.com",
+                    ""
+                );
+            }
+
+            if (field.FieldType === "File Uploader" && Array.isArray(formValues[field.FieldName])) {
+                formValues[field.FieldName] = formValues[field.FieldName].map(
+                    (file: any, index: number) => ({
+                        uid: `-${index}`,
+                        name: file.filename,
+                        status: "done",
+                        url: `http://127.0.0.1:5000/api/${file.path}`,
+
+                        
+                    })
+                );
+            }
+            
         });
 
         form.setFieldsValue(formValues);
@@ -198,21 +228,30 @@ const TicketDetails = () => {
       };
 
     const items: MenuProps['items'] = [
-        ...((selectedTicket?.CurrentLevel < highestApproval?.LevelNo)
-        ?   [
-                {
-                    label: 'Re-send Ticket',
-                    key: '1',
-                    icon: <TeamOutlined />
-                }
-            ]
-        : []),
-        {
-          label: 'Cancel Request',
-          key: '2',
-          icon: <CloseOutlined />,
-          disabled: selectedTicket?.Status !== "Assigned",
-        },
+        ...(
+            highestApproval == null || selectedTicket?.CurrentLevel >= highestApproval
+              ? [
+                  {
+                    label: "Assign Ticket",
+                    key: "3",
+                    icon: <TeamOutlined />,
+                  },
+                ]
+              : [
+                  {
+                    label: "Re-send Ticket",
+                    key: "1",
+                    icon: <TeamOutlined />,
+                  },
+                  {
+                    label: "Cancel Request",
+                    key: "2",
+                    icon: <CloseOutlined />,
+                  },
+                ]
+          ),
+        
+        
         ...((selectedTicket?.CurrentLevel >= highestApproval?.LevelNo )
             ?   [
                     {
@@ -672,7 +711,7 @@ const TicketDetails = () => {
                                 </Button>
                             </Space>
                         </Col>
-                    ): selectedTicket.Status === "On Process" && selectedTicket.AssignedTo === userId && parent === 2 ? (
+                    ): selectedTicket.Status === "On Process" && selectedTicket.AssignedTo === userId && (parent === 2 || selectedTicket.RequestType === 13) ? (
                         <Col>
                             <Space>
                                 <Button type="primary" onClick={handleGenerate} disabled={isLoading} style={{
@@ -683,7 +722,7 @@ const TicketDetails = () => {
                                         boxShadow: "0 4px 12px rgba(22,119,255,.25)",
                                     }}
                                     icon={<DownloadOutlined />}>
-                                    {isLoading? 'Generating ...' : 'Generate Excel' }
+                                    {isLoading? 'Generating ...' : 'Generate Form' }
                                 </Button>
 
                                 <Button variant='solid' color='green' onClick={handleClosing} style={{
@@ -980,7 +1019,7 @@ const TicketDetails = () => {
                                         label={field.FieldLabel}
                                         rules={[{ required: true }]}
                                         {...(
-                                        field.FieldType === "File"
+                                        field.FieldType === "File Uploader"
                                             ? {
                                                 valuePropName: "fileList",
                                                 getValueFromEvent: (e: any) => e?.fileList,
@@ -1192,7 +1231,7 @@ const TicketDetails = () => {
                                 value={emp.EmployeeId}
                                 style={{ fontSize: "12px" , letterSpacing: 0.7 }}
                             >
-                                {emp.FullName}
+                                {emp.CompleteName}
                             </StyledSelect.Option>
                         ))}
                     </StyledSelect>

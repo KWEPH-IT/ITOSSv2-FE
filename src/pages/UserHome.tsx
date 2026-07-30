@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import "../styles/userHome.css"
 import MainLayout from "./MainLayout";
-import { Row, Col, Card, Layout, Divider, Space, Tag } from 'antd'
+import { Row, Col, Card, Layout, Divider, Space, Tag, Badge } from 'antd'
 import { BookOutlined,ToolOutlined, InboxOutlined, ClockCircleOutlined} from "@ant-design/icons";
 import { Link } from 'react-router-dom';
 import { useTickets } from "../hooks/ticketing/ticketing_hooks";
@@ -12,6 +12,7 @@ import { statusColor } from "../utils/StatusTagColor";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { handleLoggedAction } from "../utils/Logger";
+import { useApprovalCounter } from "../utils/approvalCounter";
 dayjs.extend(relativeTime);
   
 
@@ -26,6 +27,9 @@ const UserHome = () => {
       
     
     const { ticket, loading } = useTickets(filters)
+    const { approvalCount }  = useApprovalCounter();
+
+    //console.log(approvalCount)
 
     if (loading) return <Loader></Loader>
   return (
@@ -54,10 +58,25 @@ const UserHome = () => {
                 </Col>
 
                 <Col xs={24} md={8}>
-                <Link onClick={() => handleLoggedAction(userId!, 'TICKET APPROVAL', 'Clicked ticket approval button')} to="/ticketApproval">
-                        <Card hoverable className="action-card">
+                    <Link onClick={() => handleLoggedAction(userId!, 'TICKET APPROVAL', 'Clicked ticket approval button')} to="/ticketApproval">
+                    <Card
+                        hoverable
+                        className="action-card"
+                        >
                         <BookOutlined className="action-icon" />
-                        <h3>Tickets for Review</h3>
+
+                        <div
+                            style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 8,
+                            }}
+                        >
+                            <h3 style={{ margin: 0 }}>Tickets for Review</h3>
+                            <Badge count={approvalCount} />
+                        </div>
+
                         <p>Review and approve requests</p>
                         </Card>
                     </Link>
