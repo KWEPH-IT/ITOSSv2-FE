@@ -48,6 +48,7 @@ const items = [
     children: [
       { key: "/ticketDashboard", label: "Service Dashboard" },
       { key: "/ticketCreation", label: "Create Request" },
+      { key: "/ticketApproval", label: "Tickets for Review" },
     ],
   },
 ];

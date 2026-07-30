@@ -22,6 +22,8 @@ import dayjs from "dayjs";
 import { Link } from 'react-router-dom';
 import { handleLoggedAction } from '../../../utils/Logger';
 import { useNavigate } from 'react-router-dom';
+import {  } from "react";
+
 
 const { Content } = Layout;
 
@@ -52,6 +54,19 @@ const TicketCreationForm = () => {
     setLevels([root]);
   }, [allCategories]);
 
+  const groupName = Form.useWatch("GroupName", form);
+
+  useEffect(() => {
+    const groupEmail = (groupName || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  
+    form.setFieldsValue({
+      GroupEmailAddress: groupEmail,
+    });
+  }, [groupName]);
+
 
 
     const filtered = (employees ?? []).filter((i : vwAtKWEProps) =>
@@ -72,57 +87,78 @@ const TicketCreationForm = () => {
         }]
       : [];
 
-    const handleChange = async (value: unknown, levelIndex: number) => {
-      const selectedValue = value as number;
-    
-      const updatedSelected = [...selectedValues];
-      updatedSelected[levelIndex] = selectedValue;
-    
-      updatedSelected.splice(levelIndex + 1);
-    
-      const children = allCategories.filter(
-        (cat: TicketCategProps ) => cat.ParentId === selectedValue
-      );
-    
-      let newLevels = levels.slice(0, levelIndex + 1);
-    
-      if (children.length > 0) {
-        newLevels.push(children);
-
-        setCustomFields([]); 
-      } else {
-
-        const selectedCategory = allCategories.find(
-          (cat: TicketCategProps) => cat.SystemId === selectedValue
+      const handleChange = (value: unknown, levelIndex: number) => {
+        const selectedValue = value as number;
+      
+        const updatedSelected = [...selectedValues];
+        updatedSelected[levelIndex] = selectedValue;
+        updatedSelected.splice(levelIndex + 1);
+      
+        const children = allCategories.filter(
+          (cat: TicketCategProps) => cat.ParentId === selectedValue
         );
-        setRawFields(selectedCategory?.custom_fields || []);
-        setCustomFields(selectedCategory?.custom_fields || []);
+      
+        const newLevels = levels.slice(0, levelIndex + 1);
+      
+        if (children.length > 0) {
+          newLevels.push(children);
+      
+          setRawFields([]);
+          setCustomFields([]);
+          setApprovals([]);
+          setSelectedSystem("");
+        } else {
+          const selectedCategory = allCategories.find(
+            (cat: TicketCategProps) => cat.SystemId === selectedValue
+          );
+      
+          setRawFields(selectedCategory?.custom_fields || []);
+          setApprovals(selectedCategory?.approvers || []);
+          setSelectedSystem(selectedCategory?.Inhouse || "");
+        }
+      
+        setSelectedValues(updatedSelected);
+        setLevels(newLevels);
+      };
 
-        setApprovals(selectedCategory?.approvers || [])
-        setSelectedSystem(selectedCategory?.Inhouse || "")
-        
-        if (selectedCategory?.Inhouse) {
-          
+      useEffect(() => {
+        if (!selectedSystem) {
+          setModules([]);
+          return;
+        }
+      
+        let cancelled = false;
+      
+        const loadModules = async () => {
           try {
-            const res = await API.get(`/api/systems/${selectedCategory?.Inhouse}/modules`, {
-              params: {
-                userId: empDetails.EmployeeId,
-                email: empDetails.EmailAddress
+            const res = await API.get(
+              `/api/systems/${selectedSystem}/modules`,
+              {
+                params: {
+                  userId: empDetails.EmployeeId,
+                  email: empDetails.EmailAddress,
+                },
               }
-            })
-
-            setModules(res.data.modules);
+            );
+      
+            if (!cancelled) {
+              setModules(res.data.modules);
+            }
           } catch (err) {
             console.error(err);
-            setModules([]);
+      
+            if (!cancelled) {
+              setModules([]);
+            }
           }
-        }
-
-      }
-    
-      setSelectedValues(updatedSelected);
-      setLevels(newLevels);
-    };
+        };
+      
+        loadModules();
+      
+        return () => {
+          cancelled = true;
+        };
+      }, [selectedSystem, empDetails.EmployeeId, empDetails.EmailAddress]);
 
 
     useEffect(() => {
@@ -173,7 +209,15 @@ const TicketCreationForm = () => {
 
     const onFinish = async (values: any) => {
       try {
-    
+        const selectedCategory =
+        selectedValues[selectedValues.length - 1];
+
+        if (!selectedCategory) {
+          message.warning("Please select a category.");
+          return;
+        }
+
+
         if (modules.length > 0 && !selectedModules.length) {
           message.warning("Please select at least one module");
           return;
@@ -182,6 +226,16 @@ const TicketCreationForm = () => {
         setIsLoading(true);
     
         const cleanedCustomFields = normalizeValues({ ...values });
+
+        if (cleanedCustomFields.GroupName) {
+          cleanedCustomFields.GroupName =
+            `KWEPH - Group Email - ${cleanedCustomFields.GroupName}`;
+        }
+
+        if (cleanedCustomFields.GroupEmailAddress) {
+          cleanedCustomFields.GroupEmailAddress =
+            `${cleanedCustomFields.GroupName}.kweph@kwe.com`;
+        }
 
         customFields.forEach((field) => {
           if (field.FieldType === "File Uploader") {
@@ -203,7 +257,7 @@ const TicketCreationForm = () => {
         const formData = new FormData();
     
         formData.append("RequestFor", values.EmployeeId);
-        formData.append("Category", values.category);
+        formData.append("Category", String(selectedCategory));
         formData.append("DHId", approverNames.DHId);
         formData.append("ISId", approverNames.ISId);
         formData.append("emailaddress", empDetails.EmailAddress);
@@ -229,9 +283,6 @@ const TicketCreationForm = () => {
             if (files?.length) {
     
               files.forEach((file: any) => {
-    
-                console.log(file.originFileObj);
-    
                 formData.append(
                   field.FieldName,
                   file.originFileObj
@@ -372,7 +423,7 @@ const TicketCreationForm = () => {
   }
 
   if (loading && userData) return <Loader></Loader>
-
+  
   return (
     <MainLayout title="">
     <Content className="incident-page">
@@ -392,6 +443,8 @@ const TicketCreationForm = () => {
 
               <Form.Item label="Who does this issue afect?" name="EmployeeId" rules={[{ required: true }]}>
                 <StyledSelect placeholder="Select employee" 
+                showSearch
+                optionFilterProp="label"
                 onChange={(value) => {
                   const emp = finalEmp.find((e: vwAtKWEProps) => e.EmployeeId === value);
                   handleApprover(emp?.DepartmentHead, emp.DeptHeadId, emp?.ImmediateSupervisor, emp?.SuperiorId);
@@ -402,11 +455,12 @@ const TicketCreationForm = () => {
                     <StyledSelect.Option
                        key={emp.EmployeeId} 
                        value={emp.EmployeeId}
+                       label={emp.CompleteName}
                        style={{
                         fontWeight: emp.EmployeeId === userId ? 500 : 400,
                       }}>
                       <Space>
-                      {emp.FullName}    { emp.EmployeeId === userId ? (
+                      {emp.CompleteName}    { emp.EmployeeId === userId ? (
                           <Tag color="blue"> YOU</Tag>
                         )
                           : null
@@ -418,20 +472,24 @@ const TicketCreationForm = () => {
               </Form.Item>
 
 
-              <Form.Item label="Select Category" required>
-                {levels?.map((level, index) => {
-                  if (!Array.isArray(level)) return null;
+              <Form.Item
+                  label="Select Category"
+                  required
+                  validateStatus={
+                    selectedValues.length === 0 ? "error" : undefined
+                  }
+                  help={
+                    selectedValues.length === 0
+                      ? "Please select a category."
+                      : undefined
+                  }
+                >
+                  {levels?.map((level, index) => {
+                    if (!Array.isArray(level)) return null;
 
-                  const isLast = index === levels.length - 1;
-
-                  return (
-                    <Form.Item
-                      key={`level-${index}`}
-                      name={isLast ? "category" : undefined} // ✅ only last has name
-                      rules={isLast ? [{ required: true }] : []}
-                      noStyle={!isLast}
-                    >
+                    return (
                       <StyledSelect
+                        key={`level-${index}`}
                         placeholder={`Select level ${index + 1}`}
                         style={{ width: "100%", marginTop: 10 }}
                         value={selectedValues[index]}
@@ -446,10 +504,9 @@ const TicketCreationForm = () => {
                           </StyledSelect.Option>
                         ))}
                       </StyledSelect>
-                    </Form.Item>
-                  );
-                })}
-              </Form.Item>
+                    );
+                  })}
+                </Form.Item>
 
               <div>
                 {Object.entries(groupedFields).map(([groupName, fields]) => {
@@ -463,7 +520,7 @@ const TicketCreationForm = () => {
                         label={field.FieldLabel}
                         rules={[{ required: true }]}
                         {...(
-                          field.FieldType === "File"
+                          field.FieldType === "File Uploader"
                             ? {
                                 valuePropName: "fileList",
                                 getValueFromEvent: (e: any) => e?.fileList,
@@ -498,8 +555,20 @@ const TicketCreationForm = () => {
 
                   // 🔥 CASE 3: REPEATABLE GROUP
                   return (
-                    <Form.List key={groupName} name={groupName}>
-                      {(groupItems, { add, remove }) => (
+                    <Form.List key={groupName} name={groupName}
+                      rules={[
+                        {
+                          validator: async (_, value) => {
+                            if (!value || value.length === 0) {
+                              return Promise.reject(
+                                new Error(`Please add at least one ${groupName}.`)
+                              );
+                            }
+                          },
+                        },
+                      ]}
+                    >
+                      {(groupItems, { add, remove }, { errors }) => (
                         <>
                           {groupItems.map(item => (
                             <Card key={item.key} style={{ marginBottom: 16 }}>
@@ -522,6 +591,11 @@ const TicketCreationForm = () => {
                           ))}
 
                           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                            {errors.length > 0 && (
+                              <Tag color="error">
+                                <Form.ErrorList errors={errors} />
+                              </Tag>
+                            )}
                             <Button type="dashed" onClick={() => add()}>
                               + Add {groupName}
                             </Button>
@@ -652,12 +726,7 @@ const TicketCreationForm = () => {
               />
             </Card>
         </Col>
-
       </Row>
-
-      
-      
-
     </Content>
     </MainLayout>
   );

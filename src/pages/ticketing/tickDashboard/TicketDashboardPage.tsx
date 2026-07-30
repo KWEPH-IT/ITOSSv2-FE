@@ -149,10 +149,13 @@ const TicketDashboardPage = () => {
         
         return ticket.filter((t: any) => {
             const maxLevel = maxLevelPerCategory?.[t.RequestType];
-        
-            return (t.CurrentLevel === maxLevel ||
-              t.CurrentLevel >= maxLevel
-            );
+
+            // No approval configured
+            if (maxLevel == null) {
+              return true;
+            }
+                
+            return (t.CurrentLevel >= maxLevel);
         });
     }, [ticket, maxLevelPerCategory]);
 
@@ -278,7 +281,7 @@ const TicketDashboardPage = () => {
                 key={emp.EmployeeId}
                 value={emp.EmployeeId}
               >
-                {emp.FullName}
+                {emp.CompleteName}
               </Checkbox>
             )))}
         </Checkbox.Group>

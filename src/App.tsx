@@ -4,6 +4,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import HomeRedirect from './pages/HomeRedirect';
 import Home from './pages/Home';
 import UserHome from './pages/UserHome';
+import UnauthorizedPage from './pages/Unauthorized';
 import SystemProfilePage from './pages/configuration/configSystemProfile/SystemProfilePage';
 import DBColumnsPage from './pages/configuration/configDBColumns/DBColumnsPage';
 import DBColumnsDetails from './pages/configuration/configDBColumns/DBColumnsDetails';
@@ -26,24 +27,25 @@ const App = () => {
       <Routes>
         {/* Default route to Login */}
         <Route path="/" element={<Login/>} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* Protected Routes */}
         <Route path='/home-redirect' element={<ProtectedRoute><HomeRedirect /></ProtectedRoute> } />
         <Route path="/user-home" element={<ProtectedRoute><UserHome /></ProtectedRoute>}/>
-        <Route path="/it-home" element={<ProtectedRoute><Home /></ProtectedRoute>}/>
+        <Route path="/it-home" element={<ProtectedRoute ITOnly><Home /></ProtectedRoute>}/>
         
         {/* Configuration */}
-        <Route path="/configSystemProfile" element={<ProtectedRoute><SystemProfilePage /></ProtectedRoute>}/>
-        <Route path="/configDBColumns" element={<ProtectedRoute><DBColumnsPage /></ProtectedRoute>}/> 
-        <Route path="/configDBColumnsDetails/:sa/:sn" element={<ProtectedRoute><DBColumnsDetails /></ProtectedRoute>}/>
-        <Route path="/configEmailAddress" element={<ProtectedRoute><EmailAddressPage /></ProtectedRoute>}/>
-        <Route path="/configGroupEmails" element={<ProtectedRoute><GroupEmailPage /></ProtectedRoute>}/>
-        <Route path="/configGroupMember/:ge" element={<ProtectedRoute><GroupEmailMember /></ProtectedRoute>}/>
-        <Route path="/configTicketCateg" element={<ProtectedRoute><TicketCategoriesPage /></ProtectedRoute>} />
+        <Route path="/configSystemProfile" element={<ProtectedRoute ITOnly><SystemProfilePage /></ProtectedRoute>}/>
+        <Route path="/configDBColumns" element={<ProtectedRoute ITOnly><DBColumnsPage /></ProtectedRoute>}/> 
+        <Route path="/configDBColumnsDetails/:sa/:sn" element={<ProtectedRoute ITOnly><DBColumnsDetails /></ProtectedRoute>}/>
+        <Route path="/configEmailAddress" element={<ProtectedRoute ITOnly><EmailAddressPage /></ProtectedRoute>}/>
+        <Route path="/configGroupEmails" element={<ProtectedRoute ITOnly><GroupEmailPage /></ProtectedRoute>}/>
+        <Route path="/configGroupMember/:ge" element={<ProtectedRoute ITOnly><GroupEmailMember /></ProtectedRoute>}/>
+        <Route path="/configTicketCateg" element={<ProtectedRoute ITOnly><TicketCategoriesPage /></ProtectedRoute>} />
         
         {/* Inventory */}
-        <Route path="/invAssetReq" element={<ProtectedRoute><AssetRequisitionPage /></ProtectedRoute>} />
-        <Route path="/invEquipment" element={<ProtectedRoute><EquipmentInvPage /></ProtectedRoute>} />
+        <Route path="/invAssetReq" element={<ProtectedRoute ITOnly><AssetRequisitionPage /></ProtectedRoute>} />
+        <Route path="/invEquipment" element={<ProtectedRoute ITOnly><EquipmentInvPage /></ProtectedRoute>} />
 
 
         {/* Ticket */}
