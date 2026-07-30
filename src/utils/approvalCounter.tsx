@@ -11,16 +11,20 @@ export const useApprovalCounter = () => {
   const { approver = [] } = useTicketApprovers();
   const { userId } = useAuth();
 
-  const getLevelConfig = (
-    ticket: TicketProps,
-    config: TicketApprover[]
-  ) => {
-    return config.find(
-      c =>
-        c.CategoryId === ticket.RequestType &&
-        c.LevelNo === ticket.CurrentLevel + 1
-    );
-  };
+ const getLevelConfig = (
+  ticket: TicketProps,
+  config?: TicketApprover[] | null
+) => {
+  if (!Array.isArray(config)) {
+    return undefined;
+  }
+
+  return config.find(
+    c =>
+      c.CategoryId === ticket.RequestType &&
+      c.LevelNo === ticket.CurrentLevel + 1
+  );
+};
 
   const isCurrentApprover = (
     ticket: TicketProps,
