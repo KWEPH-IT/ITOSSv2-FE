@@ -1,9 +1,11 @@
+import { lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './pages/login';
 import ProtectedRoute from './routes/ProtectedRoute';
-import HomeRedirect from './pages/HomeRedirect';
-import Home from './pages/Home';
-import UserHome from './pages/UserHome';
+import HomeRedirect from './pages/Home/HomeRedirect';
+//import Home from './pages/Home';
+const Home = lazy(() => import('./pages/Home/Home'));
+import UserHome from './pages/Home/UserHome';
 import UnauthorizedPage from './pages/Unauthorized';
 import SystemProfilePage from './pages/configuration/configSystemProfile/SystemProfilePage';
 import DBColumnsPage from './pages/configuration/configDBColumns/DBColumnsPage';
@@ -20,6 +22,7 @@ import TicketCreationTable from './pages/ticketing/tickCreation/TicketCreationTa
 import TicketDetails from './pages/ticketing/tickCreation/TicketDetails';
 import TicketApprovalPage from './pages/ticketing/tickForApproval/TicketApprovalPage';
 import TicketDashboardPage from './pages/ticketing/tickDashboard/TicketDashboardPage';
+
 
 const App = () => {
   return (

@@ -1,13 +1,13 @@
 import { useMemo } from "react";
-import MainLayout from "./MainLayout";
-import { getUserData } from "../hooks/user_hooks";
-import { useAuth } from "../context/AuthContext";
-import "../styles/home.css";
-import { NormalCase } from "../utils/stringFormat";
+import MainLayout from "../MainLayout";
+import { getUserData } from "../../hooks/user_hooks";
+import { useAuth } from "../../context/AuthContext";
+import "../../styles/home.css";
+import { NormalCase } from "../../utils/stringFormat";
 import { Card, Row, Col } from "antd";
 import { CheckOutlined, CloseOutlined, ContainerOutlined  } from "@ant-design/icons";
-import { useTickets } from "../hooks/ticketing/ticketing_hooks";
-import { Loader } from "../components/Loader";
+import { useTickets } from "../../hooks/ticketing/ticketing_hooks";
+import { Loader } from "../../components/Loader";
 //import { TicketProps } from "../types/Ticketing_drawer";
 
 const Home = () => {
@@ -29,7 +29,7 @@ const Home = () => {
     if (!ticket) return [];
   
     return ticket.filter(t =>
-      t.Status?.includes("Assigned") &&
+      t.Status?.includes("Assigend") &&
       (t.AssignedTo?.trim())
     );
   }, [ticket]);

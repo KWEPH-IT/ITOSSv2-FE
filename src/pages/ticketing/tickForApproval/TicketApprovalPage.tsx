@@ -13,6 +13,7 @@ import { TicketProps } from "../../../types/Ticketing_drawer";
 import { TicketApprover } from "../../../types/TicketsCateg_drawer";
 import { SearchOutlined } from "@ant-design/icons";
 import TicketApprovalForm from './TicketApprovalForm'
+import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
@@ -25,7 +26,7 @@ const ApprovalPage: React.FC = () => {
   const [ filtered, setFiltered ] = useState<TicketProps[]>([])
   const filters = useMemo(() => ({}), []);
   const [ drawerState, setDrawerState ] = useState<{open: boolean; record: TicketProps | null}>({open: false, record: null});
-
+  const navigate = useNavigate()
 
   //TICKETS
   const { ticket, loading, refetch } = useTickets(filters);
@@ -114,7 +115,12 @@ const ApprovalPage: React.FC = () => {
   }, [ticket, history, userId]);
 
   const onEditClick = (record : TicketProps) => {
-    setDrawerState({ open: true, record: record })
+    if(record.RequestType === 17 && record.Status === "Approved By IT Manager"){
+      navigate(`/ticketDetails/${btoa(record.TicketNumber)}`) 
+    }
+    else{
+      setDrawerState({ open: true, record: record })
+    }
   }
 
   const onClose = () => {
