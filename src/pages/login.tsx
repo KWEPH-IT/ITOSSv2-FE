@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { handleLogin } from "../services/authLogin";
 import { useAuth } from "../context/AuthContext";
 import "../styles/login.css";
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import { Loader } from "../components/Loader";
 
 const { Title } = Typography;
