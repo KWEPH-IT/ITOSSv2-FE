@@ -4,7 +4,7 @@ import {
   ArrowRightOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { TicketProps } from "../types/Ticketing_drawer";
+import { TicketProps } from "../../types/Ticketing_drawer";
 
 interface ApprovalListProps {
   tickets: TicketProps[];
@@ -48,7 +48,7 @@ const ApprovalList = ({ tickets }: ApprovalListProps) => {
                         }
                     }}
                     >
-                    Open
+                    {/* Open */}
                 </Button>
             ]}
           >

@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { getUserData } from "../hooks/user_hooks";
-import { Loader } from "../components/Loader";
+import { useAuth } from "../../context/AuthContext";
+import { getUserData } from "../../hooks/user_hooks";
+import { Loader } from "../../components/Loader";
 
 const HomeRedirect = () => {
   const navigate = useNavigate();

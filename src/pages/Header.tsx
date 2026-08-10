@@ -9,7 +9,7 @@ import API from '../api/api';
 import { handleLoggedAction } from '../utils/Logger';
 const { Header } = Layout;
 import { useApprovalCounter } from '../utils/approvalCounter';
-import ApprovalList from './ApprovalPopOver';
+import ApprovalList from './Home/ApprovalPopOver';
 
 interface HeaderProps {
   collapsed: boolean;

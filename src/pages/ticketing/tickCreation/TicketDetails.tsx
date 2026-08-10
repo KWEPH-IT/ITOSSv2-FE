@@ -687,7 +687,7 @@ const TicketDetails = () => {
                     </Col>
 
                     <Col flex="auto" />
-                    { selectedTicket.AssignedTo === userId && selectedTicket.Status === "Assigned" ? (
+                    { (selectedTicket.AssignedTo === userId && selectedTicket.Status === "Assigned") || (selectedTicket.RequestType === 17 && selectedTicket.Status === "Approved By IT Manager" && userId === 'K656') ?  (
                         <Col>
                             <Space>
                                 <Button type="primary" onClick={handleConfirm} style={{
