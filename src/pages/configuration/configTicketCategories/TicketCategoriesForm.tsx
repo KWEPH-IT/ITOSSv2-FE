@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Row, Col, Drawer, Space, Form, Button, Card, message } from 'antd'
+import { Row, Col, Drawer, Space, Form, Button, Card, message, Avatar } from 'antd'
 import { Container, StyledInput, StyledTextArea, StyledSelect, SubmitButton } from '../../../components/StyledComponents'
 import { DrawerProps } from '../../../types/Drawer'
 import { TicketCategProps } from '../../../types/TicketsCateg_drawer'
 import React from 'react'
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { MinusCircleOutlined, PlusOutlined, UserOutlined } from "@ant-design/icons";
 import { useTicketCategs } from '../../../hooks/configuration/ticketCateg_hooks'
 import { getEmployees } from '../../../hooks/configuration/vwAtKWE_hooks'
 import { vwAtKWEProps } from '../../../types/vwAtKWE_drawer'
@@ -75,14 +75,24 @@ const TicketCategoriesForm: React.FC<DrawerProps & {record? : TicketCategProps |
                 })
             )
 
+            const formattedAssignment = (values.assignments || []).map(
+                (assign: any) => ({
+                    AssignmentId: assign.AssignmentId,
+                    AssignmentName: assign.AssignmentName,
+                    AssignmentEmail: assign.AssignmentEmail,
+                })
+            )
+
             const payload = {
                 systemId: record?.SystemId, 
                 name: values.Name,
                 ParentId: values.ParentId? values.ParentId : null,
+                IsSNConnected: values.IsSNConnected? values.IsSNConnected : null,
                 Inhouse: values.Inhouse? values.Inhouse : null,
                 Description: values.Description? values.Description : null,
                 CustomFields: formattedCustomFields,
-                ApproverLevel: formattedApprovalLevel
+                ApproverLevel: formattedApprovalLevel,
+                Assignment: formattedAssignment
             }
 
             console.log(payload);
@@ -145,6 +155,15 @@ const TicketCategoriesForm: React.FC<DrawerProps & {record? : TicketCategProps |
                                     )
                                  )
                                 }
+                            </StyledSelect>
+                        </Form.Item>
+                    </Col>
+
+                    <Col span={24}>
+                        <Form.Item label="Is connected to Service Now?" name="IsSNConnected">
+                            <StyledSelect >
+                                <StyledSelect.Option value={1} label="Yes">Yes</StyledSelect.Option>
+                                <StyledSelect.Option value={0} label="No" >No</StyledSelect.Option>
                             </StyledSelect>
                         </Form.Item>
                     </Col>
@@ -516,12 +535,35 @@ const TicketCategoriesForm: React.FC<DrawerProps & {record? : TicketCategProps |
                                                     rules={[{ required: true, message: 'Missing User' }]}
                                                 >
                                                     <StyledSelect
-                                                    showSearch
-                                                    placeholder="Select User"
-                                                    optionFilterProp="children"
+                                                        showSearch
+                                                        optionFilterProp="label"
+                                                        placeholder="Please select Employee"
+                                                        optionLabelProp="label"
                                                     >
                                                     { employees.map((i: vwAtKWEProps) => (
-                                                        <StyledSelect.Option key={i.EmployeeId} value={i.EmployeeId}>{i.FullName}</StyledSelect.Option>
+                                                        <StyledSelect.Option employee={i} label={i.CompleteName} key={i.EmployeeId} value={i.EmployeeId} style={{ fontSize: 12 }}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                                {/* Avatar */}
+                                                                <Avatar
+                                                                    size={40}               // ✅ fixed size
+                                                                    style={{
+                                                                        backgroundColor: "#dadada",
+                                                                        borderRadius: 12,      // rounded-xl
+                                                                        display: "flex",
+                                                                        alignItems: "center",
+                                                                        justifyContent: "center",
+                                                                        flexShrink: 0,        // prevent shrinking when text is long
+                                                                    }}
+                                                                    icon={<UserOutlined style={{ color: "#fff", fontSize: 20 }} />}
+                                                                />
+
+                                                                {/* Texts */}
+                                                                <div style={{ display: "flex", flexDirection: "column" }}>
+                                                                <span style={{ fontWeight: 600 }}>{i.CompleteName}</span>
+                                                                <span style={{ fontSize: 12, color: "#888", fontWeight: 300 }}>{i.EmployeeId} • {i.Department} </span>
+                                                                </div>
+                                                            </div>
+                                                        </StyledSelect.Option>
                                                     ))}
                                                     </StyledSelect>
                                                 </Form.Item>
@@ -539,6 +581,104 @@ const TicketCategoriesForm: React.FC<DrawerProps & {record? : TicketCategProps |
                                             rules={[{ required: true, message: 'Missing Description' }]}
                                         >
                                             <StyledInput placeholder="Description" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={1}>
+                                        <MinusCircleOutlined onClick={() => remove(name)} />
+                                    </Col>
+                                    
+                                </Row>
+                            ))}
+                            <Col span={24}>
+                                <Form.Item>
+                                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                                    Add field
+                                    </Button>
+                                </Form.Item>
+                            </Col>
+                            </>
+                        )}
+                    </Form.List>
+                </Card>
+
+
+                <Card variant='borderless' >
+                    <p style={{ fontWeight: 600, letterSpacing: 0.7, fontSize: 15,color: "#1677ff" }}> Assignment </p>
+                   
+                    <Form.List name="assignments">
+                        {(fields, { add, remove }) => (
+                            <>
+                            {fields.map(({ key, name, ...restField }) => (
+                                <Row key={key} style={{ display: 'flex', marginBottom: 8 }} gutter={[16,16]}>
+
+                                    <Col span={8}>
+                                        <Form.Item
+                                            {...restField}
+                                            name={[name, 'AssignmentId']}
+                                            rules={[{ required: true, message: 'Missing Assignment' }]}
+                                        >
+                                            <StyledSelect  placeholder="Please select Personnel" 
+                                                showSearch
+                                                optionFilterProp="label"
+                                                optionLabelProp="label"
+                                                onChange={(value) => {
+                                                    const selected = employees.find((emp : vwAtKWEProps) => emp.EmployeeId === value);
+                                                    if (selected) {
+                                                        form.setFieldValue(['assignments', name, 'AssignmentName'], selected.CompleteName);
+                                                        form.setFieldValue(['assignments', name, 'AssignmentEmail'], selected.EmailAddress);
+                                                    }
+                                                }}
+                                                >
+                                                { employees.map((i: vwAtKWEProps) => (
+                                                    <StyledSelect.Option 
+                                                        key={i.EmployeeId} 
+                                                        value={i.EmployeeId}
+                                                        label={`${i.EmployeeId} • ${i.CompleteName}`}
+                                                        style={{ fontSize: 12 }}
+                                                    >
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                            {/* Avatar */}
+                                                            <Avatar
+                                                                size={40}               // ✅ fixed size
+                                                                style={{
+                                                                    backgroundColor: "#dadada",
+                                                                    borderRadius: 12,      // rounded-xl
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    flexShrink: 0,        // prevent shrinking when text is long
+                                                                }}
+                                                                icon={<UserOutlined style={{ color: "#fff", fontSize: 20 }} />}
+                                                            />
+
+                                                            {/* Texts */}
+                                                            <div style={{ display: "flex", flexDirection: "column" }}>
+                                                            <span style={{ fontWeight: 600 }}>{i.CompleteName}</span>
+                                                            <span style={{ fontSize: 12, color: "#888", fontWeight: 300 }}>{i.EmployeeId} • {i.Department} </span>
+                                                            </div>
+                                                        </div>
+                                                    </StyledSelect.Option>
+                                                ))}
+                                            </StyledSelect>
+                                        </Form.Item>
+                                    </Col>
+                                    
+                                    <Col span={8}>
+                                        <Form.Item
+                                            {...restField}
+                                            name={[name, 'AssignmentName']}
+                                            rules={[{ required: true, message: 'Missing Assignment' }]}
+                                        >
+                                            <StyledInput placeholder="Employee Name" readOnly/>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={7}>
+                                        <Form.Item
+                                            {...restField}
+                                            name={[name, 'AssignmentEmail']}
+                                            rules={[{ required: true, message: 'Missing Assignment' }]}
+                                        >
+                                            <StyledInput placeholder="Employee Name" readOnly/>
                                         </Form.Item>
                                     </Col>
                                     <Col span={1}>

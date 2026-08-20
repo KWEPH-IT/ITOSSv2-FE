@@ -8,6 +8,6 @@ export const getFullName = (
     employees.find(
       (emp) =>
         emp.EmployeeId?.toLowerCase() === approverValue.toLowerCase()
-    )?.FullName || "N/A"
+    )?.CompleteName || "N/A"
   );
 };

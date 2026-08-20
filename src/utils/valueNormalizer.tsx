@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { Tag, Table, Descriptions } from "antd";
+const apiUrl = import.meta.env.VITE_SERVER_API_URL;
 
 export const normalizeValues = (obj: any): any => {
   if (Array.isArray(obj)) {
@@ -50,7 +51,8 @@ const isFileArray = (value: any) => {
 
 
 const buildFileUrl = (file: any) => {
-  const BASE_URL = "https://your-domain.com"; // change this
+  const BASE_URL = `${apiUrl}/api/`
+
 
   if (!file?.path) return "#";
 
@@ -59,6 +61,7 @@ const buildFileUrl = (file: any) => {
     .replace("./app/uploads", "/uploads")
     .replace(/\\/g, "/");
 
+    
   return `${BASE_URL}${cleanPath}`;
 };
 

@@ -8,38 +8,56 @@ import { Card, Row, Col } from "antd";
 import { CheckOutlined, CloseOutlined, ContainerOutlined  } from "@ant-design/icons";
 import { useTickets } from "../../hooks/ticketing/ticketing_hooks";
 import { Loader } from "../../components/Loader";
-//import { TicketProps } from "../types/Ticketing_drawer";
+import { TicketProps } from "../../types/Ticketing_drawer";
+import { TicketApprover } from "../../types/TicketsCateg_drawer";
+import { useTicketApprovers } from "../../hooks/configuration/ticketApprover_hooks";
 
 const Home = () => {
   const { userId }  = useAuth();
   const { userData, loading } = getUserData(userId);
   const filters = useMemo(() => ({}), []);
   const { ticket, loading: tLoading } = useTickets(filters)
+  const { approver } = useTicketApprovers()
 
-  const unAssignedTickets = useMemo(() => {
-    if (!ticket) return [];
+  const getMaxLevel = (ticket: TicketProps, config: TicketApprover[]): number => {
+    const levelsForCategory = config
+      .filter(c => c.CategoryId === ticket.RequestType)
+      .map(c => c.LevelNo);
   
-    return ticket.filter(t =>
-      t.Status?.includes("Approved") &&
-      (!t.AssignedTo?.trim())
-    );
-  }, [ticket]);
+    return levelsForCategory.length ? Math.max(...levelsForCategory) : 0;
+  };
+  
+  const unAssignedTickets = useMemo(() => {
+    if (!ticket || !approver) return [];
+  
+    return ticket.filter(t => {
+      const isEmpty = !t.AssignedTo?.trim();
+      const maxLevel = getMaxLevel(t, approver);
+      const hasReachedMaxLevel = maxLevel > 0 && t.CurrentLevel >= maxLevel;
+  
+      return (
+        t.Status?.includes("Approved") &&
+        isEmpty &&
+        hasReachedMaxLevel
+      );
+    });
+  }, [ticket, approver]);
 
   const assignedTickets = useMemo(() => {
     if (!ticket) return [];
   
     return ticket.filter(t =>
-      t.Status?.includes("Assigend") &&
+      t.Status?.includes("Assigned") &&
       (t.AssignedTo?.trim())
     );
   }, [ticket]);
 
 
-  const closedTickets = useMemo(() => {
+  const onProcessTickets = useMemo(() => {
     if (!ticket) return [];
   
     return ticket.filter(t =>
-      t.Status?.includes("Closed") 
+      t.Status?.includes("On Process") 
     );
   }, [ticket]);
 
@@ -145,8 +163,8 @@ const Home = () => {
                 </div>
 
                 <div>
-                  <div style={{ fontWeight: 600 }}>Closed Tickets</div>
-                  <div style={{ fontSize: 12, color: "#888" }}>{closedTickets.length}</div>
+                  <div style={{ fontWeight: 600 }}>On Process Tickets</div>
+                  <div style={{ fontSize: 12, color: "#888" }}>{onProcessTickets.length}</div>
                 </div>
               </div>
           </Card>
