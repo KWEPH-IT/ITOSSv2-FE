@@ -1,16 +1,17 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, memo } from 'react';
 import MainLayout from '../../MainLayout'
+import TicketAssignmentModal from './TicketAssignmentModal';
 import "../../../styles/userTicketDetails.css";
-import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message, Upload, Form, Timeline, Modal } from 'antd';
+import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message, Upload, Form, Timeline, Modal, Popconfirm, Descriptions} from 'antd';
 import { StyledTable } from '../../../components/StyledTable';
-import { StyledSelect, StyledTextArea } from '../../../components/StyledComponents';
+import { StyledInput, StyledTextArea } from '../../../components/StyledComponents';
 import { useParams } from 'react-router-dom';
 import { useTickets } from '../../../hooks/ticketing/ticketing_hooks';
 import { useTicketCategs } from '../../../hooks/configuration/ticketCateg_hooks';
 import { TicketCustomFields, TicketCategProps, SelectOption } from '../../../types/TicketsCateg_drawer';
 import { Loader } from '../../../components/Loader';
 import { getInitials } from '../../../utils/stringFormat';
-import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined, CheckCircleFilled, TeamOutlined, CheckOutlined, SwapOutlined, CheckCircleOutlined, DownloadOutlined  } from "@ant-design/icons";
+import { SendOutlined, FlagOutlined, DownOutlined, CloseOutlined, UploadOutlined, CheckCircleFilled, TeamOutlined, CheckOutlined, SwapOutlined, CheckCircleOutlined, GlobalOutlined, DownloadOutlined  } from "@ant-design/icons";
 import { renderField } from '../../../utils/fieldRenderer';
 import { normalizeValues } from '../../../utils/valueNormalizer';
 import { TicketMessage } from '../../../types/Ticketing_drawer';
@@ -24,7 +25,8 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { MenuProps } from 'antd';
 import relativeTime from "dayjs/plugin/relativeTime";
-import { vwAtKWEProps } from '../../../types/vwAtKWE_drawer';
+const apiUrl = import.meta.env.VITE_SERVER_API_URL;
+
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -41,8 +43,8 @@ const TicketDetails = () => {
     const [ form ] = Form.useForm();
     const [ enrichedFields, setEnrichedFields ] = useState<TicketCustomFields[]>([]);
     const [ showModal, setShowModal ] = useState(false);
+    const [ showSNModal, setSNShowModal ] = useState(false);
     const [ isLoading, setIsLoading ] = useState(false);
-    const [ assignedTo, setAssignedTo ] = useState({empId: "", name: "", email: ""});
     const { employees, loading : empLoading } = getEmployees();
 
     const filters = useMemo(() => ({
@@ -61,10 +63,12 @@ const TicketDetails = () => {
       );
     
     const category = categ?.filter((cat: TicketCategProps) => cat.SystemId === selectedTicket?.RequestType)
-    const parent = category?.[0]?.ParentId;
+    const IsSNConnected = category?.[0].IsSNConnected;
+    // const parent = category?.[0]?.ParentId;
     const fields = category?.[0]?.custom_fields;
     const fieldsValue = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
     const modules = selectedTicket?.modules || [];
+
     const approvals = category?.[0]?.approvers || [];
     
     const highestLevel =
@@ -189,7 +193,7 @@ const TicketDetails = () => {
                         uid: `-${index}`,
                         name: file.filename,
                         status: "done",
-                        url: `http://127.0.0.1:5000/api/${file.path}`,
+                        url: `${apiUrl}/api/${file.path}`,
 
                         
                     })
@@ -223,7 +227,7 @@ const TicketDetails = () => {
                 userId!,
                 "TICKET DETAILS",
                 "Clicked ticket approval flow."
-              );
+            );
         }
       };
 
@@ -244,7 +248,20 @@ const TicketDetails = () => {
                     icon: <TeamOutlined />,
                   },
                   {
-                    label: "Cancel Request",
+                    label: (
+                        <Popconfirm
+                          title="Cancel this request?"
+                          description="This action cannot be undone."
+                          okText="Yes, cancel it"
+                          cancelText="No"
+                          onConfirm={() => handleCancelRequest()}
+                          onCancel={(e) => e?.stopPropagation()}
+                        >
+                          <span onClick={(e) => e.stopPropagation()}>
+                            Cancel Request
+                          </span>
+                        </Popconfirm>
+                      ),
                     key: "2",
                     icon: <CloseOutlined />,
                   },
@@ -316,6 +333,21 @@ const TicketDetails = () => {
         },
     };
 
+    const handleCancelRequest = async () => {
+        try {
+          handleLoggedAction(userId!, 'TICKET CANCELLATION', "Clicked Cancel Request button");
+          const response = await API.post(`/api/cancel`, {
+            ticket_no: decoded_tn,
+          });
+          message.success(response.data.message);
+      
+          await refetch();
+        } catch (e: any) {
+          console.error(e);
+          message.error(e.response?.data?.message || "Failed to send message");
+        }
+    };
+
 
     const handleMenuClick: MenuProps["onClick"] = async(info) => {
         if(info.key === "1"){
@@ -337,21 +369,6 @@ const TicketDetails = () => {
             }
         }
 
-        else if(info.key === "2"){
-            try{
-                handleLoggedAction(userId!, 'TICKET CANCELLATION', "Clicked Cancel Request button")
-                const response = await API.post(`/api/cancel`, {
-                    ticket_no: decoded_tn,
-                });
-                message.success(response.data.message);
-    
-                await refetch();
-            }
-            catch(e: any){
-                console.error(e);
-                message.error( e.response?.data?.message || "Failed to send message")
-            }
-        }
         else if(info.key === "3"){
             handleLoggedAction(userId!, 'TICKET ASSIGNMENT', "Clicked Assign ticket button")
             setShowModal(true);
@@ -397,36 +414,6 @@ const TicketDetails = () => {
             );
         }
     }       
-
-    const handleAssignment = async() => {
-        try{
-
-            if(!assignedTo.empId){
-                return false;
-            }
-
-            setIsLoading(true);
-            const response = await API.post(`/api/assign`, {
-                ticket_no: decoded_tn,
-                categoryName: selectedTicket?.RequestName,
-                assignedToId: assignedTo.empId,
-                assignedToName: assignedTo.name,
-                assignedToEmail: assignedTo.email
-            })
-            message.success(response.data.message);
-            handleLoggedAction(userId!, 'TICKET ASSIGNMENT', "Assigned ticket to " + assignedTo.name )
-
-            await refetch();
-        }
-        catch(e: any){
-            console.error(e);
-            message.error( e.response?.data?.message || "Failed to send message")
-        }
-        finally{
-            setIsLoading(false);
-            setShowModal(false);
-        }
-    }
 
     const handleConfirm = async() => {
         try{
@@ -477,31 +464,10 @@ const TicketDetails = () => {
         }
     }
 
-    const handleGenerate = async() =>{
-        try{
-            setIsLoading(true)
-            const response = await API.post(
-                `/api/${decoded_tn}/generateFile`,
-                {},
-                { responseType: "blob" }
-            );
-        
-            const url = window.URL.createObjectURL(response.data);
-        
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `${decoded_tn}.xlsx`;
-            link.click();
-        
-            URL.revokeObjectURL(url);
-            handleLoggedAction(userId!, 'TICKET DETAILS', "Generated Excel file" )
-        }
-        catch (error: any) {
-            message.error(error.message);
-        } finally {
-            setIsLoading(false);
-        }
+    const handleServiceNow = async() => {
+        setSNShowModal(true);
     }
+
     
     const handleClosing = async() => {
         try{
@@ -621,7 +587,7 @@ const TicketDetails = () => {
                                     {selectedTicket?.Status}
                                 </Tag>
                             </Col>
-                            { selectedTicket.Status != 'Assigned' && selectedTicket.Status != 'For Closing' && selectedTicket.Status != 'Closed' ? (
+                            { selectedTicket.Status != 'Assigned' && selectedTicket.Status != 'For Closing' && selectedTicket.Status != 'Closed' && selectedTicket.Status != 'Cancelled Request' ? (
                                 <Col>
                                     <Dropdown menu={menuProps}>
                                         <Button 
@@ -711,20 +677,20 @@ const TicketDetails = () => {
                                 </Button>
                             </Space>
                         </Col>
-                    ): selectedTicket.Status === "On Process" && selectedTicket.AssignedTo === userId && (parent === 2 || selectedTicket.RequestType === 13) ? (
+                    ): selectedTicket.Status === "On Process" && selectedTicket.AssignedTo === userId && IsSNConnected === 1 ? (
                         <Col>
                             <Space>
-                                <Button type="primary" onClick={handleGenerate} disabled={isLoading} style={{
+                                <Button type="primary" onClick={handleServiceNow}  style={{
                                         height: 42,
                                         padding: "0 22px",
                                         borderRadius: 10,
                                         fontWeight: 600,
                                         boxShadow: "0 4px 12px rgba(22,119,255,.25)",
                                     }}
-                                    icon={<DownloadOutlined />}>
-                                    {isLoading? 'Generating ...' : 'Generate Form' }
+                                    icon={<GlobalOutlined />}>
+                                    ServiceNow
                                 </Button>
-
+                                
                                 <Button variant='solid' color='green' onClick={handleClosing} style={{
                                         height: 42,
                                         padding: "0 22px",
@@ -766,7 +732,6 @@ const TicketDetails = () => {
                 items={[
                 {
                     key: "1",
-        
                     label: (
                         <span style={{ fontSize: 14 }}>
                           Activity
@@ -926,7 +891,7 @@ const TicketDetails = () => {
                                                             key={file.FileName}
                                                             onClick={() =>
                                                                 window.open(
-                                                                    `http://127.0.0.1:5000/api${file.FilePath}`,  //to change for production
+                                                                    `${apiUrl}/api${file.FilePath}`,  //to change for production
                                                                     "_blank"
                                                                 )
                                                             }
@@ -938,7 +903,7 @@ const TicketDetails = () => {
 
                                                             {isImage ? (
                                                                 <img
-                                                                    src={`http://127.0.0.1:5000/api${file.FilePath}`}
+                                                                    src={`${apiUrl}/api${file.FilePath}`}
                                                                     width={120}
                                                                     height={80}
                                                                     style={{
@@ -1098,7 +1063,7 @@ const TicketDetails = () => {
                                         columns={[
                                             {
                                                 title: "Module",
-                                                dataIndex: "ModuleName",
+                                                dataIndex: "ModuleLabel",
                                                 key: "ModuleName"
                                             },
                                             {
@@ -1198,50 +1163,161 @@ const TicketDetails = () => {
 
                     )
 
-                },
+                }
 
-              
                 ]}
             />
 
             </Card>
         </div>
         </div>
-
-        <Modal
-            title="Ticket Assignment"
-            closable={{ 'aria-label': 'Custom Close Button' }}
-            open={showModal}
-            onOk={handleAssignment}
-            onCancel={() => setShowModal(false)}>
-           
-           <Row>
-                <Col span={24}>
-                    <StyledSelect<string> style={{ width: "100%", fontSize: "12px" }} placeholder="Please select ..." 
-                         onChange={(value) => {
-                            const emp = employees.find((e: vwAtKWEProps) => e.EmployeeId === value);
-                            setAssignedTo({empId: emp?.EmployeeId, name: emp?.FullName, email: emp?.EmailAddress})
-                          }} 
-                        >
-                        {employees
-                            .filter((emp: vwAtKWEProps) => emp.Department === "IT")
-                            .map((emp: vwAtKWEProps) => (
-                            <StyledSelect.Option 
-                                key={emp.EmployeeId}
-                                value={emp.EmployeeId}
-                                style={{ fontSize: "12px" , letterSpacing: 0.7 }}
-                            >
-                                {emp.CompleteName}
-                            </StyledSelect.Option>
-                        ))}
-                    </StyledSelect>
-                </Col>
-            </Row>
-
-           
-    </Modal> 
+        
+        <TicketAssignmentModal isModalOpen={showModal} closeDrawer={()=> setShowModal(false)}  record={category} ticket_no={decoded_tn} refetch={refetch} />
+        <ServiceNowModalHelper showSNModal={showSNModal} userId={userId} record={selectedTicket} onUserAction={refetch} onClose={() => setSNShowModal(false)} />
+        
     </MainLayout>
   )
 }
+
+
+
+const ServiceNowModalHelper = memo(({showSNModal, userId, record, onUserAction, onClose}:any) => {
+    const [form] = Form.useForm();
+    const [ loading, setIsLoading ] = useState(false);
+    // live clock so displayed date/time stays accurate while modal is open
+    const [now, setNow] = useState(dayjs());
+    const ticket_no = record?.TicketNumber
+    const requestType = record?.RequestType
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(dayjs()), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleGenerate = async() =>{
+        try{
+            setIsLoading(true)
+            const response = await API.post(
+                `/api/${ticket_no}/generateFile`,
+                {},
+                { responseType: "blob" }
+            );
+        
+            const url = window.URL.createObjectURL(response.data);
+        
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${ticket_no}.xlsx`;
+            link.click();
+        
+            URL.revokeObjectURL(url);
+            handleLoggedAction(userId!, 'TICKET DETAILS', "Generated Excel file" )
+        }
+        catch (error: any) {
+            message.error(error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const handleSave = async () => {
+        try {
+          const values = await form.validateFields();
+          setIsLoading(true);
+
+          await API.post(`/api/ticket/serviceNow`, {
+            ticket_no: ticket_no,
+            requestType: requestType,
+            SNIncidentNumber: values.SNIncidentNumber,
+            SNDateStarted: values.SNDateStarted ? values.SNDateStarted : now.format('YYYY-MM-DD HH:mm:ss'),
+            SNDateFinished: record?.SNDateStarted ? now.format('YYYY-MM-DD HH:mm:ss'): null
+          });
+      
+          message.success('ServiceNow details saved');
+          onClose();
+        } catch (error: any) {
+            if (error?.errorFields) return; // validation error, already shown on fields
+            message.error(error.message);
+            } 
+        finally {
+          setIsLoading(false);
+          onUserAction();
+        }
+      };
+
+    return (
+      <Modal
+        title="Service Now details"
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={showSNModal}
+        onCancel={onClose}
+        onOk={handleSave}
+        destroyOnHidden
+        >
+            <Form layout='vertical' form={form} initialValues={{ SNIncidentNumber: record?.SNIncidentNumber }}>
+                <Row gutter={10}>
+                    <Col span={24}>
+                        <Form.Item 
+                            name="SNIncidentNumber"
+                            label="Service Now Incident Number"
+                            rules={[{ required: true }]}
+                            >
+                            <StyledInput placeholder='Please enter the Incident Number'/>
+                        </Form.Item>
+                    </Col>
+            
+                
+                    <Col span={24} >
+                        {record?.SNDateStarted ?
+                            <Descriptions column={1} bordered size="small" className="small-desc">
+                                <Descriptions.Item label="Date Started"> <Tag color='orange'>{dayjs(record.SNDateStarted).format('YYYY-MM-DD HH:mm:ss')}</Tag> </Descriptions.Item>
+                                {record?.SNDateFinished ?
+                                    <Descriptions.Item label="Date Finished"> <Tag color='blue'>{dayjs(record.SNDateFinished).format('YYYY-MM-DD HH:mm:ss')}</Tag> </Descriptions.Item>
+                                    : null
+                                }
+                                <Descriptions.Item label="Status">{record.SNStatus} {record.SNStatus === 'Closed' ? <Button onClick={handleSave} type='link' style={{fontSize: 12, letterSpacing: 0.7, textDecoration: 'underline'}}> Re-open </Button> : null}</Descriptions.Item>
+                            </Descriptions>
+                            :
+                            <Form.Item 
+                                name="SNDateStarted"
+                                label="Date Started"
+                                >
+                                <div style={{ padding: '4px 11px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 12, letterSpacing: 0.7 }}>
+                                    {now.format('YYYY-MM-DD HH:mm:ss')}
+                                </div>
+                            </Form.Item>
+                        }
+                    </Col>
+
+                    <Col span={24} style={{ marginTop: 15 }}>
+                        <Form.Item>
+                            <Button type="primary" onClick={handleGenerate}  disabled={loading} block icon={<DownloadOutlined />}>
+                                {loading? 'Generating ...' : 'Generate Form' }
+                            </Button>
+                        </Form.Item>
+                    </Col>
+                    
+                    {record?.SNStatus === "Processing" ? (
+                        <Col span={24}>
+                            <Form.Item 
+                                name="SNDateFinished"
+                                label="Date Finished"
+                                >
+                                <div style={{ padding: '4px 11px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 12, letterSpacing: 0.7 }}>
+                                    {now.format('YYYY-MM-DD HH:mm:ss')}
+                                </div>
+                            </Form.Item>
+                        </Col>
+                    )
+                    : null}
+                </Row>
+
+
+
+            </Form>
+
+      </Modal>
+    );
+  });
 
 export default TicketDetails

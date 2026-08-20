@@ -10,6 +10,7 @@ import { handleLoggedAction } from '../utils/Logger';
 const { Header } = Layout;
 import { useApprovalCounter } from '../utils/approvalCounter';
 import ApprovalList from './Home/ApprovalPopOver';
+import { useTicketApprovers } from "../hooks/configuration/ticketApprover_hooks";
 
 interface HeaderProps {
   collapsed: boolean;
@@ -23,7 +24,8 @@ interface HeaderProps {
 const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, userName, dept, userGroup}) => {
   const displayName = formatName(userName);
   const [isLoading, setIsLoading] = useState(false);
-  const { approvalCount, pendingApprovals }  = useApprovalCounter();
+  const { approvalCount, pendingApprovals }  = useApprovalCounter(dept);
+  const { approver = [] } = useTicketApprovers();
 
 
   const handleLogout = async() =>{
@@ -94,7 +96,7 @@ const AppHeader: React.FC<HeaderProps> = ({collapsed, setCollapsed, userId, user
               trigger="click"
               placement="bottomRight"
               content={
-                <ApprovalList tickets={pendingApprovals} />
+                <ApprovalList tickets={pendingApprovals} approver={approver} />
               }
           >
               <Badge count={approvalCount}>

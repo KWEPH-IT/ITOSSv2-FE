@@ -4,6 +4,7 @@ export interface TicketCategProps {
     ParentId: number;
     Inhouse: string;
     Description: string;
+    IsSNConnected: number;
     CreatedBy: string;
     DateModified: string;
     ModifiedBy: string;
@@ -38,4 +39,11 @@ export interface TicketApprover {
     ApproverType: "Role" | "Specific User" | "Dynamic Superior" | "Dynamic Manager";
     ApproverValue: string;
     Description: string;
+}
+
+export interface TicketAssignment {
+    CategoryId: number;
+    AssignmentId: string;
+    AssignmentName: string;
+    AssignmentEmail: string;    
 }

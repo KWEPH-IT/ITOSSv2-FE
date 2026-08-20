@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo  } from 'react'
 import MainLayout from '../../MainLayout'
 import { Layout, Row, Col, Card, Button, Space, Form, message, Timeline, Tag } from "antd";
 import { StyledSelect } from '../../../components/StyledComponents';
@@ -22,7 +22,6 @@ import dayjs from "dayjs";
 import { Link } from 'react-router-dom';
 import { handleLoggedAction } from '../../../utils/Logger';
 import { useNavigate } from 'react-router-dom';
-import {  } from "react";
 
 
 const { Content } = Layout;
@@ -45,7 +44,7 @@ const TicketCreationForm = () => {
   const [ isSubmit, setIsSubmit ] = useState(false);
   const [ selectedSystem, setSelectedSystem ] = useState("");
   const [ modules, setModules ] = useState([]);
-  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [selectedModules, setSelectedModules] = useState<{ module: string; label: string }[]>([]);
   const navigate = useNavigate();
   const employeeId = userData?.EmployeeId;
 
@@ -66,7 +65,6 @@ const TicketCreationForm = () => {
       GroupEmailAddress: groupEmail,
     });
   }, [groupName]);
-
 
 
     const filtered = (employees ?? []).filter((i : vwAtKWEProps) =>
@@ -275,26 +273,35 @@ const TicketCreationForm = () => {
     
         // ACTUAL FILE APPENDING
         customFields.forEach((field) => {
-    
           if (field.FieldType === "File Uploader") {
-    
-            const files = values[field.FieldName]?.fileList;
-    
+            const files = values[field.FieldName];
+        
             if (files?.length) {
-    
               files.forEach((file: any) => {
+                console.log("Appending file:", file.name);
+        
                 formData.append(
                   field.FieldName,
                   file.originFileObj
                 );
-    
               });
-    
             }
-    
           }
-    
         });
+
+        // console.log("=== FormData ===");
+
+        // for (const [key, value] of formData.entries()) {
+        //   if (value instanceof File) {
+        //     console.log(key, {
+        //       name: value.name,
+        //       size: value.size,
+        //       type: value.type,
+        //     });
+        //   } else {
+        //     console.log(key, value);
+        //   }
+        // }
 
         const response = await API.post(
           `/api/ticket`,
@@ -317,17 +324,24 @@ const TicketCreationForm = () => {
     
       }
     };
-    
 
+    useEffect(() => {
+      const grantedModules = modules
+        .filter((m : ModuleProps) => m.hasAccess)
+        .map((m : ModuleProps) => ({
+          module: m.module,
+          label: m.label,
+        }));
+    
+      setSelectedModules(grantedModules);
+    }, [modules]);
+
+  
     const rowSelection = {
-      selectedRowKeys: selectedModules,
-      onChange: (_keys: React.Key[], rows: any[]) => {
-        // store module identifiers (not labels)
-        setSelectedModules(rows.map(r => r.module));
+      selectedRowKeys: selectedModules.map((m) => m.module), 
+      onChange: (_keys: React.Key[], rows: ModuleProps[]) => {
+        setSelectedModules(rows.map((r) => ({ module: r.module, label: r.label })));
       },
-      getCheckboxProps: (record: any) => ({
-        disabled: record.hasAccess
-      })
     };
 
     useEffect(() => {
@@ -341,7 +355,6 @@ const TicketCreationForm = () => {
         const enriched = await Promise.all(
           rawFields.map(async (field) => {
             const fieldType = field.FieldType?.toLowerCase();
-            //console.log(fieldType)
     
             if (
               fieldType === "select" &&
@@ -360,7 +373,6 @@ const TicketCreationForm = () => {
                 });
     
                 tableCache[key] = res.data;
-                //console.log(res.data)
               }
     
               return { ...field, options: tableCache[key] };
@@ -441,7 +453,7 @@ const TicketCreationForm = () => {
           <Card className="form-card">
             <Form layout='vertical' disabled={isSubmit} form={form} onFinish={onFinish} initialValues={{ EmployeeId: userId }}>
 
-              <Form.Item label="Who does this issue afect?" name="EmployeeId" rules={[{ required: true }]}>
+              <Form.Item label="Who does this issue affect?" name="EmployeeId" rules={[{ required: true }]}>
                 <StyledSelect placeholder="Select employee" 
                 showSearch
                 optionFilterProp="label"
@@ -490,7 +502,7 @@ const TicketCreationForm = () => {
                     return (
                       <StyledSelect
                         key={`level-${index}`}
-                        placeholder={`Select level ${index + 1}`}
+                        placeholder={`Select category ${index + 1}`}
                         style={{ width: "100%", marginTop: 10 }}
                         value={selectedValues[index]}
                         onChange={(value) => handleChange(value, index)}
@@ -685,12 +697,13 @@ const TicketCreationForm = () => {
                       {
                         step.ApproverType === "Dynamic Superior" ? (
                           <>
-                            {approverNames?.ISName}{" "}
+                            {/* {approverNames?.ISName}{" "} */}
+                            {getFullName(approverNames.ISId, employees)}{" "}
                             <Tag color="orange">{step.Description}</Tag>
                           </>
                         ) : step.ApproverType === "Dynamic Manager" ? (
                           <>
-                            {approverNames?.DHName}{" "}
+                            {getFullName(approverNames.DHId, employees)}{" "}
                             <Tag color="blue">{step.Description}</Tag>
                           </>
                         ) : step.ApproverType === "Specific User" ? (

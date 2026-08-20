@@ -17,11 +17,9 @@ const {  Content } = Layout;
 
 
 
-
-
 const UserHome = () => {
     const { userId } = useAuth();
-    const { approvalCount }  = useApprovalCounter();
+    const { approvalCount }  = useApprovalCounter("");
 
   return (
     <MainLayout title="">

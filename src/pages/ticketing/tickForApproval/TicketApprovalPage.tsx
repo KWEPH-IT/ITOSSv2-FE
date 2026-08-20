@@ -32,11 +32,11 @@ const ApprovalPage: React.FC = () => {
   const { ticket, loading, refetch } = useTickets(filters);
   const { approver } = useTicketApprovers();
 
-  const getLevelConfig = (
+  const getLevelConfigs = (
     ticket: TicketProps,
     config: TicketApprover[]
   ) => {
-    return config.find(
+    return config.filter(
       c =>
         c.CategoryId === ticket.RequestType &&
         c.LevelNo === ticket.CurrentLevel + 1
@@ -51,23 +51,26 @@ const ApprovalPage: React.FC = () => {
     config: TicketApprover[],
     userId: string
   ) => {
-    const levelConfig = getLevelConfig(ticket, config);
+    const levelConfigs = getLevelConfigs(ticket, config);
+
+  if (levelConfigs.length === 0) return false;
   
-    if (!levelConfig) return false;
   
-    switch (levelConfig.ApproverType) {
-      case "Dynamic Superior":
-        return ticket.ISId === userId;
+    return levelConfigs.some(levelConfig => {
+      switch (levelConfig.ApproverType) {
+        case "Dynamic Superior":
+          return ticket.ISId === userId;
   
-      case "Dynamic Manager":
-        return ticket.DHId === userId;
+        case "Dynamic Manager":
+          return ticket.DHId === userId;
   
-      case "Specific User":
-        return levelConfig.ApproverValue === userId;
+        case "Specific User":
+          return levelConfig.ApproverValue === userId;
   
-      default:
-        return false;
-    }
+        default:
+          return false;
+      }
+    });
   };
 
   const refreshUserTable = async () => {
@@ -80,8 +83,9 @@ const ApprovalPage: React.FC = () => {
   
   const pendingTickets = useMemo(() => {
     if (!ticket || !userId || !approver) return [];
-    
 
+    console.log(approver)
+    
     return ticket.filter(t =>
       (t.Status?.includes("Approved") ||
         t.Status?.includes("Submitted")) &&
