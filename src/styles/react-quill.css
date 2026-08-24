@@ -1,0 +1,30 @@
+.quill-small .ql-toolbar {
+    padding: 2px;
+  }
+  
+  .quill-small .ql-toolbar button {
+    width: 20px;
+    height: 20px;
+    padding: 2px;
+  }
+  
+  .quill-small .ql-toolbar .ql-picker {
+    font-size: 12px;
+  }
+
+  .quill-small .ql-picker-options {
+    z-index: 100;
+  }
+
+  .quill-small .ql-toolbar {
+    position: relative;
+    z-index: 100;
+  }
+  
+  .quill-small .ql-toolbar .ql-picker-label {
+    padding: 0 4px;
+  }
+  
+  .quill-small .ql-editor {
+    font-size: 12px;
+  }

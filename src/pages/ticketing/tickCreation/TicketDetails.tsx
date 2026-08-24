@@ -63,7 +63,7 @@ const TicketDetails = () => {
       );
     
     const category = categ?.filter((cat: TicketCategProps) => cat.SystemId === selectedTicket?.RequestType)
-    const IsSNConnected = category?.[0].IsSNConnected;
+    const IsSNConnected = category?.[0]?.IsSNConnected;
     // const parent = category?.[0]?.ParentId;
     const fields = category?.[0]?.custom_fields;
     const fieldsValue = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
@@ -161,47 +161,94 @@ const TicketDetails = () => {
     
     useEffect(() => {
         if (!fields?.length || !fieldsValue) return;
-
+    
         const formValues = { ...fieldsValue };
-
-        fields.forEach((field:any) => {
-            if (field.FieldType === "Date") {
-                const value = formValues[field.FieldName];
-
-                if (value) {
-                    formValues[field.FieldName] = dayjs(value);
-                }
-            }
+    
+        fields.forEach((field: any) => {
+            const fieldName = field.FieldName;
+            const groupName = field.GroupName;
+    
+            const isGrouped =
+                groupName && groupName !== "___NO_GROUP___";
+    
+            const getValue = () => {
+                if (isGrouped) {
+                    const groupedValue = formValues[groupName]?.[fieldName];
             
-            if (field.FieldName === "GroupName"){
-                formValues[field.FieldName] =  formValues.GroupName.replace(
-                    "KWEPH - Group Email - ",
-                    ""
+                    if (groupedValue !== undefined) {
+                        return groupedValue;
+                    }
+            
+                    return formValues[fieldName];
+                }
+            
+                return formValues[fieldName];
+            };
+            
+            const setValue = (value: any) => {
+                if (isGrouped) {
+                    formValues[groupName] = {
+                        ...formValues[groupName],
+                        [fieldName]: value,
+                    };
+                } else {
+                    formValues[fieldName] = value;
+                }
+            };
+
+            const value = getValue();
+
+            // DATE
+            if (field.FieldType === "Date" && value) {
+                setValue(dayjs(value));
+            }
+    
+            // GROUP NAME
+            if (fieldName === "GroupName" && value) {
+                setValue(
+                    value.replace(
+                        "KWEPH - Group Email - ",
+                        ""
+                    )
                 );
             }
-
-            if (field.FieldName === "GroupEmailAddress"){
-                formValues[field.FieldName] =  formValues.GroupEmailAddress.replace(
-                    ".kweph@kwe.com",
-                    ""
+    
+            // GROUP EMAIL
+            if (fieldName === "GroupEmailAddress" && value) {
+                setValue(
+                    value.replace(
+                        ".kweph@kwe.com",
+                        ""
+                    )
                 );
             }
-
-            if (field.FieldType === "File Uploader" && Array.isArray(formValues[field.FieldName])) {
-                formValues[field.FieldName] = formValues[field.FieldName].map(
+    
+            // FILE UPLOADER
+            if (
+                field.FieldType === "File Uploader" &&
+                Array.isArray(value)
+            ) {
+                
+    
+                const mappedFiles = value.map(
                     (file: any, index: number) => ({
-                        uid: `-${index}`,
-                        name: file.filename,
+                        uid: file.uid || `-${index}`,
+                        name: file.filename || file.stored_filename,
                         status: "done",
-                        url: `${apiUrl}/api/${file.path}`,
-
                         
+    
+                        url: file.path
+                            ? `${apiUrl}/api/${file.path.replace(/\\/g, "/")}`
+                            : file.url,
+
+                            
                     })
                 );
+               
+                setValue(mappedFiles);
             }
-            
         });
-
+    
         form.setFieldsValue(formValues);
     }, [fields, fieldsValue, form]);
 
@@ -494,47 +541,144 @@ const TicketDetails = () => {
 
     const onFinish = async (values: any) => {
         try {
-      
             setIsLoading(true);
+    
             const cleanedCustomFields = normalizeValues({ ...values });
-  
+    
+            // ==========================================
+            // REMOVE FILE UPLOADERS FROM CUSTOM FIELDS
+            // ==========================================
             fields.forEach((field: TicketCustomFields) => {
-                if (field.FieldType === "File Uploader") {
-                delete cleanedCustomFields[field.FieldName];
+                if (field.FieldType !== "File Uploader") {
+                    return;
+                }
+    
+                const fieldName = field.FieldName;
+                const groupName = field.GroupName;
+    
+                const isGrouped =
+                    groupName && groupName !== "___NO_GROUP___";
+    
+                if (isGrouped) {
+                    if (cleanedCustomFields[groupName]) {
+                        delete cleanedCustomFields[groupName][fieldName];
+                    }
+                } else {
+                    delete cleanedCustomFields[fieldName];
                 }
             });
-  
+    
+            // ==========================================
             // FIX DATE FIELDS BEFORE STRINGIFY
+            // ==========================================
             Object.keys(cleanedCustomFields).forEach((key) => {
                 const value = cleanedCustomFields[key];
     
-                if (typeof value === "string" && value.includes("T") && !isNaN(Date.parse(value))) {
-                cleanedCustomFields[key] = new Date(value)
-                    .toISOString()
-                    .split("T")[0]; // YYYY-MM-DD
+                if (
+                    typeof value === "string" &&
+                    value.includes("T") &&
+                    !isNaN(Date.parse(value))
+                ) {
+                    cleanedCustomFields[key] = new Date(value)
+                        .toISOString()
+                        .split("T")[0];
                 }
             });
-      
+    
+            // ==========================================
+            // FORM DATA
+            // ==========================================
             const formData = new FormData();
-        
+    
             formData.append("ticket_no", decoded_tn);
+    
             formData.append(
                 "custom_fields",
                 JSON.stringify(cleanedCustomFields)
             );
-            //console.log([...formData.entries()]);
-      
-            const response = await API.put(`/api/ticket`,formData);
-            handleLoggedAction(userId!, 'TICKET DETAILS', 'Modified ticket details.')
+    
+            // ==========================================
+            // APPEND FILES
+            // ==========================================
+            fields.forEach((field: TicketCustomFields) => {
+                if (field.FieldType !== "File Uploader") {
+                    return;
+                }
+    
+                const fieldName = field.FieldName;
+                const groupName = field.GroupName;
+    
+                const isGrouped =
+                    groupName && groupName !== "___NO_GROUP___";
+    
+                // Get the correct value
+                const files = isGrouped
+                    ? values[groupName]?.[fieldName]
+                    : values[fieldName];
+    
+                if (!Array.isArray(files) || !files.length) {
+                    return;
+                }
+    
+                files.forEach((file: any) => {
+    
+                    // Only append NEW files
+                    // Existing files already have a URL/path and
+                    // don't have originFileObj.
+                    if (file.originFileObj) {
+                        console.log("Appending file:", {
+                            fieldName,
+                            groupName,
+                            name: file.name,
+                        });
+    
+                        formData.append(
+                            fieldName,
+                            file.originFileObj
+                        );
+                    }
+                });
+            });
+    
+            // ==========================================
+            // DEBUG
+            // ==========================================
+            console.log("=== FormData ===");
+    
+            for (const [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    console.log(key, {
+                        name: value.name,
+                        size: value.size,
+                        type: value.type,
+                    });
+                } else {
+                    console.log(key, value);
+                }
+            }
+    
+            // ==========================================
+            // UPDATE
+            // ==========================================
+            const response = await API.put(
+                `/api/ticket`,
+                formData
+            );
+    
+            handleLoggedAction(
+                userId!,
+                "TICKET DETAILS",
+                "Modified ticket details."
+            );
+    
             message.success(response.data.message);
+    
         } catch (error: any) {
-          message.error(error.message);
+            message.error(error.message);
         } finally {
-          setIsLoading(false);
+            setIsLoading(false);
         }
     };
-
-
     if (loading || isLoading || empLoading || categLoading) {
   return <Loader />;
 }
@@ -982,13 +1126,13 @@ const TicketDetails = () => {
                                         key={`${groupName}-${field.FieldName}`}
                                         name={field.FieldName}
                                         label={field.FieldLabel}
-                                        rules={[{ required: true }]}
+                                        rules={[{ required: field.FieldType !== "File Uploader" }]}
                                         {...(
-                                        field.FieldType === "File Uploader"
+                                          field.FieldType === "File Uploader"
                                             ? {
                                                 valuePropName: "fileList",
                                                 getValueFromEvent: (e: any) => e?.fileList,
-                                            }
+                                              }
                                             : {}
                                         )}
                                         
@@ -1009,7 +1153,15 @@ const TicketDetails = () => {
                                             key={`${groupName}-${field.FieldName}`}
                                             name={[groupName, field.FieldName]}
                                             label={field.FieldLabel}
-                                            rules={[{ required: true }]}
+                                            rules={[{ required: field.FieldType !== "File Uploader" }]}
+                                            {...(
+                                              field.FieldType === "File Uploader"
+                                                ? {
+                                                    valuePropName: "fileList",
+                                                    getValueFromEvent: (e: any) => e?.fileList,
+                                                  }
+                                                : {}
+                                            )}
                                         >
                                             {renderField(field)}
                                         </Form.Item>
