@@ -4,12 +4,12 @@ import { TicketCustomFields, SelectOption } from "../types/TicketsCateg_drawer";
 import { UploadOutlined } from "@ant-design/icons"
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import "../styles/react-quill.css"
 
 const isReadonly = (field: TicketCustomFields) => {
   const mode = field.ValueMode?.toLowerCase();
   return mode === "generated" || mode === "actual";
 };
-
 
 
 export const renderField = (field: TicketCustomFields) => {
@@ -19,7 +19,7 @@ export const renderField = (field: TicketCustomFields) => {
     case "File Uploader":
       return (
         <Upload beforeUpload={() => false} multiple>
-          <Button icon={<UploadOutlined />}>
+          <Button icon={<UploadOutlined />} style={{ fontSize:12 }}>
             Upload File
           </Button>
         </Upload>
@@ -64,9 +64,7 @@ export const renderField = (field: TicketCustomFields) => {
       return (
         <ReactQuill
           theme="snow"
-          value = ""
-          onChange={() => {}}
-          
+          className="quill-small"
         />
       );
     case "Textarea":

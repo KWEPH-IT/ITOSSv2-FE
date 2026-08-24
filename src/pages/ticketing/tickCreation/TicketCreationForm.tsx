@@ -207,123 +207,206 @@ const TicketCreationForm = () => {
 
     const onFinish = async (values: any) => {
       try {
-        const selectedCategory =
-        selectedValues[selectedValues.length - 1];
-
-        if (!selectedCategory) {
-          message.warning("Please select a category.");
-          return;
-        }
-
-
-        if (modules.length > 0 && !selectedModules.length) {
-          message.warning("Please select at least one module");
-          return;
-        }
-    
-        setIsLoading(true);
-    
-        const cleanedCustomFields = normalizeValues({ ...values });
-
-        if (cleanedCustomFields.GroupName) {
-          cleanedCustomFields.GroupName =
-            `KWEPH - Group Email - ${cleanedCustomFields.GroupName}`;
-        }
-
-        if (cleanedCustomFields.GroupEmailAddress) {
-          cleanedCustomFields.GroupEmailAddress =
-            `${cleanedCustomFields.GroupName}.kweph@kwe.com`;
-        }
-
-        customFields.forEach((field) => {
-          if (field.FieldType === "File Uploader") {
-            delete cleanedCustomFields[field.FieldName];
+          const selectedCategory =
+              selectedValues[selectedValues.length - 1];
+  
+          if (!selectedCategory) {
+              message.warning("Please select a category.");
+              return;
           }
-        });
-
-        // FIX DATE FIELDS BEFORE STRINGIFY
-        Object.keys(cleanedCustomFields).forEach((key) => {
-          const value = cleanedCustomFields[key];
-
-          if (typeof value === "string" && value.includes("T") && !isNaN(Date.parse(value))) {
-            cleanedCustomFields[key] = new Date(value)
-              .toISOString()
-              .split("T")[0]; // YYYY-MM-DD
+  
+          if (modules.length > 0 && !selectedModules.length) {
+              message.warning("Please select at least one module");
+              return;
           }
-        });
-    
-        const formData = new FormData();
-    
-        formData.append("RequestFor", values.EmployeeId);
-        formData.append("Category", String(selectedCategory));
-        formData.append("DHId", approverNames.DHId);
-        formData.append("ISId", approverNames.ISId);
-        formData.append("emailaddress", empDetails.EmailAddress);
-        formData.append("system_name", selectedSystem);
-    
-        formData.append(
-          "custom_fields",
-          JSON.stringify(cleanedCustomFields)
-        );
-    
-        formData.append(
-          "modules",
-          JSON.stringify(selectedModules)
-        );
-    
-        // ACTUAL FILE APPENDING
-        customFields.forEach((field) => {
-          if (field.FieldType === "File Uploader") {
-            const files = values[field.FieldName];
-        
-            if (files?.length) {
+  
+          setIsLoading(true);
+  
+          const cleanedCustomFields = normalizeValues({ ...values });
+  
+          // ==========================================
+          // GROUP EMAIL
+          // ==========================================
+          if (cleanedCustomFields.GroupName) {
+              cleanedCustomFields.GroupName =
+                  `KWEPH - Group Email - ${cleanedCustomFields.GroupName}`;
+          }
+  
+          if (cleanedCustomFields.GroupEmailAddress) {
+              cleanedCustomFields.GroupEmailAddress =
+                  `${cleanedCustomFields.GroupName}.kweph@kwe.com`;
+          }
+  
+          // ==========================================
+          // REMOVE FILE UPLOADERS FROM CUSTOM FIELDS
+          // ==========================================
+          customFields.forEach((field) => {
+              if (field.FieldType !== "File Uploader") {
+                  return;
+              }
+  
+              const fieldName = field.FieldName;
+              const groupName = field.GroupName;
+  
+              const isGrouped =
+                  groupName && groupName !== "___NO_GROUP___";
+  
+              if (isGrouped) {
+                  if (cleanedCustomFields[groupName]) {
+                      delete cleanedCustomFields[groupName][fieldName];
+                  }
+              } else {
+                  delete cleanedCustomFields[fieldName];
+              }
+          });
+  
+          // ==========================================
+          // FIX DATE FIELDS
+          // ==========================================
+          Object.keys(cleanedCustomFields).forEach((key) => {
+              const value = cleanedCustomFields[key];
+  
+              if (
+                  typeof value === "string" &&
+                  value.includes("T") &&
+                  !isNaN(Date.parse(value))
+              ) {
+                  cleanedCustomFields[key] = new Date(value)
+                      .toISOString()
+                      .split("T")[0];
+              }
+          });
+  
+          // ==========================================
+          // FORM DATA
+          // ==========================================
+          const formData = new FormData();
+  
+          formData.append(
+              "RequestFor",
+              values.EmployeeId
+          );
+  
+          formData.append(
+              "Category",
+              String(selectedCategory)
+          );
+  
+          formData.append(
+              "DHId",
+              approverNames.DHId
+          );
+  
+          formData.append(
+              "ISId",
+              approverNames.ISId
+          );
+  
+          formData.append(
+              "emailaddress",
+              empDetails.EmailAddress
+          );
+  
+          formData.append(
+              "system_name",
+              selectedSystem
+          );
+  
+          formData.append(
+              "custom_fields",
+              JSON.stringify(cleanedCustomFields)
+          );
+  
+          formData.append(
+              "modules",
+              JSON.stringify(selectedModules)
+          );
+  
+          // ==========================================
+          // ACTUAL FILE APPENDING
+          // ==========================================
+          customFields.forEach((field) => {
+              if (field.FieldType !== "File Uploader") {
+                  return;
+              }
+  
+              const fieldName = field.FieldName;
+              const groupName = field.GroupName;
+  
+              const isGrouped =
+                  groupName && groupName !== "___NO_GROUP___";
+  
+              // Get files depending on whether field is grouped
+              const files = isGrouped
+                  ? values[groupName]?.[fieldName]
+                  : values[fieldName];
+  
+              if (!Array.isArray(files) || !files.length) {
+                  return;
+              }
+  
               files.forEach((file: any) => {
-                console.log("Appending file:", file.name);
-        
-                formData.append(
-                  field.FieldName,
-                  file.originFileObj
-                );
+                  console.log("Appending file:", {
+                      fieldName,
+                      groupName,
+                      name: file.name,
+                      originFileObj: file.originFileObj,
+                  });
+  
+                  if (file.originFileObj) {
+                      formData.append(
+                          fieldName,
+                          file.originFileObj
+                      );
+                  }
               });
-            }
+          });
+  
+          // ==========================================
+          // DEBUG FORMDATA
+          // ==========================================
+          console.log("=== FormData ===");
+  
+          for (const [key, value] of formData.entries()) {
+              if (value instanceof File) {
+                  console.log(key, {
+                      name: value.name,
+                      size: value.size,
+                      type: value.type,
+                  });
+              } else {
+                  console.log(key, value);
+              }
           }
-        });
-
-        // console.log("=== FormData ===");
-
-        // for (const [key, value] of formData.entries()) {
-        //   if (value instanceof File) {
-        //     console.log(key, {
-        //       name: value.name,
-        //       size: value.size,
-        //       type: value.type,
-        //     });
-        //   } else {
-        //     console.log(key, value);
-        //   }
-        // }
-
-        const response = await API.post(
-          `/api/ticket`,
-          formData
-        );
-    
-        handleLoggedAction(userId!, 'CREATED TICKET', 'Submitted new ticket.')
-        message.success(response.data.message);
-    
-        setIsSubmit(true);
-        navigate(`/ticketDetails/${btoa(response.data.ticket_no)}`) 
-    
+  
+          // ==========================================
+          // SUBMIT
+          // ==========================================
+          const response = await API.post(
+              `/api/ticket`,
+              formData
+          );
+  
+          handleLoggedAction(
+              userId!,
+              "CREATED TICKET",
+              "Submitted new ticket."
+          );
+  
+          message.success(response.data.message);
+  
+          setIsSubmit(true);
+  
+          navigate(
+              `/ticketDetails/${btoa(response.data.ticket_no)}`
+          );
+  
       } catch (error: any) {
-    
-        message.error(error.message);
-    
+          message.error(error.message);
       } finally {
-    
-        setIsLoading(false);
-    
+          setIsLoading(false);
       }
-    };
+  };
 
     useEffect(() => {
       const grantedModules = modules
@@ -530,7 +613,7 @@ const TicketCreationForm = () => {
                         key={`${groupName}-${field.FieldName}`}
                         name={field.FieldName}
                         label={field.FieldLabel}
-                        rules={[{ required: true }]}
+                        rules={[{ required: field.FieldType !== "File Uploader" }]}
                         {...(
                           field.FieldType === "File Uploader"
                             ? {
@@ -556,7 +639,15 @@ const TicketCreationForm = () => {
                             key={`${groupName}-${field.FieldName}`}
                             name={[groupName, field.FieldName]}
                             label={field.FieldLabel}
-                            rules={[{ required: true }]}
+                            rules={[{ required: field.FieldType !== "File Uploader" }]}
+                            {...(
+                              field.FieldType === "File Uploader"
+                                ? {
+                                    valuePropName: "fileList",
+                                    getValueFromEvent: (e: any) => e?.fileList,
+                                  }
+                                : {}
+                            )}
                           >
                             {renderField(field)}
                           </Form.Item>
