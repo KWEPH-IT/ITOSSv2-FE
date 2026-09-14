@@ -111,9 +111,10 @@ const TicketDashboardPage = () => {
       K1815: "blue",
       K1761: "pink",
       K1709: "yellow",
-      K1124: "lime", 
+      K1124: "geekblue", 
       K935: "cyan",
-      K1035: "geekblue"
+      K1035: "lime",
+      K1904: "gold"
     };
 
     const getTagColor = (employeeId: string) =>
