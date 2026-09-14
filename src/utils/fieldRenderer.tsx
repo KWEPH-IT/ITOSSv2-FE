@@ -42,12 +42,17 @@ export const renderField = (field: TicketCustomFields) => {
     case "Select":
       // if options are already present
       if (field.options) {
+
+        const sortedOptions = [...field.options].sort((a, b) =>
+          a.label.localeCompare(b.label)
+        );
+
         return (
           <StyledSelect
             showSearch
             optionFilterProp="label"
           >
-            {field.options.map((opt: SelectOption, index) => (
+            {sortedOptions.map((opt: SelectOption, index) => (
               <Select.Option key={index} label={opt.label} value={opt.value}>
                 {opt.label}
               </Select.Option>
