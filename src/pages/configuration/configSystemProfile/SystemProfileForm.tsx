@@ -24,12 +24,14 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
             Status: Number(record?.Status), // ensure it's 1 or 0
             ScheduleTime: record.ScheduleTime
             ? dayjs(record.ScheduleTime, "HH:mm:ss")
-            : null
+            : null,
+            ScheduleType: record.ScheduleType || "Monthly"
         });
         } else {
             form.resetFields();
             form.setFieldsValue({
                 Status: 1, // default Active for new
+                ScheduleType: "Monthly",
             });
         }
     }, [drawerMode, record, form]);
@@ -102,7 +104,7 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
             </Space>
             }
         >
-            <Form form={form} onFinish={onFinish} layout='vertical' initialValues={drawerMode === "edit" ? { ...(record ?? {}), Status: record?.Status } : { Status: 1 } }>
+            <Form form={form} onFinish={onFinish} layout='vertical' >
                 <Row gutter={12}>
                     <Col span={12}>
                         <StyledFormItem name="SystemName" label="System Name" rules={[{ required: true, message: "Please input system name!" }]}>
@@ -241,7 +243,7 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
                         </Col>
 
                         <Col span={12}>
-                            <StyledFormItem name="BackUpPath" label="Backup Path" >
+                            <StyledFormItem name="BackupPath" label="Backup Path" >
                                 <StyledInput  />
                             </StyledFormItem>
                         </Col>
@@ -250,7 +252,7 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
                     <Row gutter={12}>
                         <Col span={12}>
                             <StyledFormItem name="ScheduleType" label="Schecule Type" >
-                                <StyledInput  readOnly />
+                                <StyledInput value="Monthly" readOnly />
                             </StyledFormItem>
                         </Col>
 
