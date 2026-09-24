@@ -6,8 +6,6 @@ const API_URL = import.meta.env.VITE_SERVER_API_URL
 export const handleLogin = async(
     values: {username: string, password: string},
     setLoading: (loading: boolean) => void
-    //navigate: (path:string) => void,
-    //setUserId: (id :string) => void
 ) => {
     try {
         setLoading(true);

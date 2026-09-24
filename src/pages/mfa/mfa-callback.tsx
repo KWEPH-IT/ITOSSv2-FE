@@ -20,6 +20,7 @@ const MFACallback = () => {
             }
 
             localStorage.setItem("user", user);
+            console.log(user)
 
             message.success("MFA verification successful.");
 
@@ -29,12 +30,12 @@ const MFACallback = () => {
                 ""
             );
 
-            navigate("/home-redirect");
+            navigate("/home-redirect", { replace: true });
 
         } else {
             message.error("MFA verification failed.");
 
-            navigate("/");
+            navigate("/login", { replace: true });
         }
 
     }, [searchParams, navigate]);
