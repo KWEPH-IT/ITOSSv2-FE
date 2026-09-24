@@ -1,31 +1,28 @@
 import { message } from "antd";
 import API from "../api/api"; 
-//import { handleLoggedAction } from "../utils/Logger";
 
 const API_URL = import.meta.env.VITE_SERVER_API_URL
 
 export const handleLogin = async(
     values: {username: string, password: string},
+    setLoading: (loading: boolean) => void
     //navigate: (path:string) => void,
     //setUserId: (id :string) => void
 ) => {
     try {
+        setLoading(true);
         const response  = await API.post(`${API_URL}/auth/login`, values);
 
-        //const user = response.data.user
-        //localStorage.setItem("user", user)
-        //setUserId(user)
-        //message.success(response.data.message)
-        //handleLoggedAction(user, 'LOGIN SUCCESS', '')
         
-        //navigate("/home-redirect");
-        console.log("LOGIN RESPONSE:", response.data);
-        console.log("MFA URL:", response.data.mfa_url);
+
+        // console.log("LOGIN RESPONSE:", response.data);
+        // console.log("MFA URL:", response.data.mfa_url);
 
         if (response.data.status === "mfa_required") {
             window.location.href = response.data.mfa_url;
             return;
         }
+        setLoading(false);
 
     }
     catch (error: any) {
