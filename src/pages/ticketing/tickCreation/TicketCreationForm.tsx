@@ -582,6 +582,10 @@ const TicketCreationForm = () => {
                   {levels?.map((level, index) => {
                     if (!Array.isArray(level)) return null;
 
+                    const sortedLevel = [...level].sort((a, b) =>
+                      a.Name.localeCompare(b.Name)
+                    );
+
                     return (
                       <StyledSelect
                         key={`level-${index}`}
@@ -590,7 +594,7 @@ const TicketCreationForm = () => {
                         value={selectedValues[index]}
                         onChange={(value) => handleChange(value, index)}
                       >
-                        {level.map(item => (
+                        {sortedLevel.map(item => (
                           <StyledSelect.Option
                             key={item.SystemId}
                             value={item.SystemId}

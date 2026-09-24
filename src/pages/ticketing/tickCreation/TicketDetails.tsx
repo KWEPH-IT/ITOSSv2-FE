@@ -25,6 +25,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { MenuProps } from 'antd';
 import relativeTime from "dayjs/plugin/relativeTime";
+import { getUserData } from '../../../hooks/user_hooks';
 const apiUrl = import.meta.env.VITE_SERVER_API_URL;
 
 
@@ -39,6 +40,7 @@ const TicketDetails = () => {
     const decoded_tn = tn ? atob(tn) : "";
 
     const { userId } = useAuth();
+    const { userData, loading : userLoading } = getUserData(userId);
     const { categ, loading : categLoading } = useTicketCategs();
     const [ form ] = Form.useForm();
     const [ enrichedFields, setEnrichedFields ] = useState<TicketCustomFields[]>([]);
@@ -280,7 +282,7 @@ const TicketDetails = () => {
 
     const items: MenuProps['items'] = [
         ...(
-            highestApproval == null || selectedTicket?.CurrentLevel >= highestApproval
+            (highestApproval == null || selectedTicket?.CurrentLevel >= highestApproval) && userData?.Department === "IT"
               ? [
                   {
                     label: "Assign Ticket",
@@ -679,7 +681,7 @@ const TicketDetails = () => {
             setIsLoading(false);
         }
     };
-    if (loading || isLoading || empLoading || categLoading) {
+    if (loading || isLoading || empLoading || categLoading || userLoading) {
   return <Loader />;
 }
     if (!ticket || ticket.length === 0) return <div>No ticket found</div>;
@@ -847,6 +849,17 @@ const TicketDetails = () => {
                                 </Button>
                             </Space>
                         </Col>
+                    ) : selectedTicket.Status === "On Process" && selectedTicket.AssignedTo === userId && IsSNConnected === 0 ? (
+                        <Button variant='solid' color='green' onClick={handleClosing} style={{
+                                height: 42,
+                                padding: "0 22px",
+                                borderRadius: 10,
+                                fontWeight: 600,
+                                boxShadow: "0 4px 12px rgba(22,119,255,.25)",
+                            }}
+                            icon={<CheckCircleOutlined />}>
+                            Mark as Resolved
+                        </Button>
                     ): selectedTicket.Status === "For Closing" && selectedTicket.RequestorId === userId ? (
                         <Col>
                             <Button

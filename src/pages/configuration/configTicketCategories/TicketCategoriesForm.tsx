@@ -87,7 +87,7 @@ const TicketCategoriesForm: React.FC<DrawerProps & {record? : TicketCategProps |
                 systemId: record?.SystemId, 
                 name: values.Name,
                 ParentId: values.ParentId? values.ParentId : null,
-                IsSNConnected: values.IsSNConnected? values.IsSNConnected : null,
+                IsSNConnected: values.IsSNConnected? values.IsSNConnected : 0,
                 Inhouse: values.Inhouse? values.Inhouse : null,
                 Description: values.Description? values.Description : null,
                 CustomFields: formattedCustomFields,
