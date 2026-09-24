@@ -13,7 +13,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const onSubmit = async (values: { username: string; password: string }) => {
     setLoading(true);
-    await handleLogin(values, setLoading)
+    await handleLogin(values, setLoading )
     setLoading(false);
   };
   if (loading) return <Loader />;

@@ -13,11 +13,6 @@ export const handleLogin = async(
         setLoading(true);
         const response  = await API.post(`${API_URL}/auth/login`, values);
 
-        
-
-        // console.log("LOGIN RESPONSE:", response.data);
-        // console.log("MFA URL:", response.data.mfa_url);
-
         if (response.data.status === "mfa_required") {
             window.location.href = response.data.mfa_url;
             return;

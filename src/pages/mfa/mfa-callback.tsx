@@ -14,7 +14,7 @@ const MFACallback = () => {
         if (status === "success") {
 
             if (!user) {
-                message.error("Unable to identify user.");
+                message.error("Unable to identify user!");
                 navigate("/");
                 return;
             }
