@@ -1,8 +1,6 @@
 import { Row, Col, Card, Typography, Form, Input, Button } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 import { handleLogin } from "../services/authLogin";
-import { useAuth } from "../context/AuthContext";
 import "../styles/login.css";
 import { memo, useState } from "react";
 import { Loader } from "../components/Loader";
@@ -13,12 +11,9 @@ const { Title } = Typography;
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { setUserId } = useAuth();
-
   const onSubmit = async (values: { username: string; password: string }) => {
     setLoading(true);
-    await handleLogin(values, navigate, setUserId);
+    await handleLogin(values, setLoading )
     setLoading(false);
   };
   if (loading) return <Loader />;
