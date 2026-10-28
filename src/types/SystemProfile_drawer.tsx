@@ -15,6 +15,7 @@ export interface SystemProfileProps{
     Remarks : string,
     Status : number,
     SourceCodePath: string,
+    FileBackupPath: string,
     BackupPath: string,
     ScheduleType: string,
     ScheduleTime:string,
@@ -23,4 +24,9 @@ export interface SystemProfileProps{
     DateCreated: string,
     ModifiedBy : string,
     DateModified : string
+    folders?:{
+        FolderPath?: string,
+        FileBackupAction?:string,
+        SourceCodeBackupAction?:string
+    }
 }
