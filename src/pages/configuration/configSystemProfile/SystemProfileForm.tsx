@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { Drawer, Space, Button, Form, Row, Col, Select,  Input, message, Alert, Card, TimePicker, InputNumber } from "antd";
 import { Container, SubmitButton, StyledFormItem, StyledInput, StyledSelect } from "../../../components/StyledComponents";
 import { Loader } from '../../../components/Loader';
-import {  SaveOutlined } from "@ant-design/icons";
+import {  SaveOutlined, MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { DrawerProps } from '../../../types/Drawer';
 import API from '../../../api/api';
 import { SystemProfileProps } from '../../../types/SystemProfile_drawer';
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 
+dayjs.extend(customParseFormat);
 
 const { TextArea } = Input;
 
@@ -16,16 +18,17 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
   const [ loading, isloading ] = useState(false); 
   const [isSubmit, setSubmit] = useState(false);
 
+  
   // watch when drawerMode or record changes
     useEffect(() => {
         if (drawerMode === "edit" && record) {
-        form.setFieldsValue({
-            ...(record ?? {}),
-            Status: Number(record?.Status), // ensure it's 1 or 0
-            ScheduleTime: record.ScheduleTime
-            ? dayjs(record.ScheduleTime, "HH:mm:ss")
-            : null
-        });
+            form.setFieldsValue({   
+                ...(record ?? {}),
+                Status: Number(record?.Status), // ensure it's 1 or 0
+                ScheduleTime: record.ScheduleTime
+                ? dayjs(record.ScheduleTime, "HH:mm:ss")
+                : null
+            });
         } else {
             form.resetFields();
             form.setFieldsValue({
@@ -34,55 +37,89 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
         }
     }, [drawerMode, record, form]);
 
-  const onFinish = async(payload : any) =>{
-    setSubmit(true);
-    try{
-        if (drawerMode === "add"){
-            isloading(true);
-            const response = await API.post(`/api/CreateSystemPro`, payload);
-            
-            if (response.status === 200){
-                message.success("Profile successfully added!");
-                form.resetFields();
-                closeDrawer();
-                onUserAction();
-            }
-            else{
-                message.error(response.data.mesage);
-            }
-        }
-        else{
-            isloading(true);
-            // include record ID if needed
-            const payloadWithId = { ...record, ...payload,  
-                ScheduleTime: payload.ScheduleTime
-                ? payload.ScheduleTime.format("HH:mm:ss")
-                : null };
 
-            console.log(payloadWithId);
-            const response = await API.put(`/api/UpdateSystemPro`, payloadWithId);
-            
-            if (response.status === 200){
-                message.success("Profile successfully updated!");
-                form.resetFields();
-                closeDrawer();
-                onUserAction();
+    const onFinish = async (payload: any) => {
+        setSubmit(true);
+        isloading(true);
+
+        try {
+            const formattedFolders = (payload.folders || []).map(
+                (level: any, index: number) => ({
+                    LevelNo: index + 1,
+                    FolderPath: level.FolderPath || null,
+                    FileBackupAction: level.FileBackupAction || null,
+                    SourceCodeBackupAction: level.SourceCodeBackupAction || null
+                })
+            );
+
+            if (drawerMode === "add") {
+
+                const payloadToSubmit = {
+                    ...payload,
+                    folders: formattedFolders,
+                    ScheduleType: "Monthly",
+                    ScheduleTime: payload.ScheduleTime
+                        ? payload.ScheduleTime.format("HH:mm:ss")
+                        : null
+                };
+
+                const response = await API.post(
+                    `/api/CreateSystemPro`,
+                    payloadToSubmit
+                );
+
+                if (response.status === 200) {
+                    message.success("Profile successfully added!");
+                    form.resetFields();
+                    closeDrawer();
+                    onUserAction();
+                } else {
+                    message.error(
+                        response.data?.message || "Failed to add profile."
+                    );
+                }
+
+            } else {
+
+                const payloadWithId = {
+                    ...record,
+                    ...payload,
+                    folders: formattedFolders,
+                    ScheduleType: "Monthly",
+                    ScheduleTime: payload.ScheduleTime
+                        ? payload.ScheduleTime.format("HH:mm:ss")
+                        : null
+                };
+
+                const response = await API.put(
+                    `/api/UpdateSystemPro`,
+                    payloadWithId
+                );
+
+                if (response.status === 200) {
+                    message.success("Profile successfully updated!");
+                    form.resetFields();
+                    closeDrawer();
+                    onUserAction();
+                } else {
+                    message.error(
+                        response.data?.message || "Failed to update profile."
+                    );
+                }
             }
-            else{
-                message.error(response.data.mesage);
-            }
+
+        } catch (error) {
+            console.error("Error saving:", error);
+            message.error("Error saving... Please try again.");
+
+        } finally {
+            form.resetFields();
+            setSubmit(false);
+            isloading(false);
         }
-    }
-    catch(er){
-        console.error("Error saving:", er);
-        message.error("Error saving... Please try again.");
-    }
-    finally{
-        form.resetFields()
-        setSubmit(false)
-        isloading(false);
-    }
-  }
+    };
+
+
 
   if (loading){<Loader></Loader>}
   return (
@@ -102,7 +139,7 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
             </Space>
             }
         >
-            <Form form={form} onFinish={onFinish} layout='vertical' initialValues={drawerMode === "edit" ? { ...(record ?? {}), Status: record?.Status } : { Status: 1 } }>
+            <Form form={form} onFinish={onFinish} layout='vertical' >
                 <Row gutter={12}>
                     <Col span={12}>
                         <StyledFormItem name="SystemName" label="System Name" rules={[{ required: true, message: "Please input system name!" }]}>
@@ -154,7 +191,7 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
                 <Card variant='borderless' >
                     <p style={{ fontWeight: 600, letterSpacing: 0.7, fontSize: 13,color: "#1677ff" }}> Database Details </p>
                     
-                    <Row>
+                    <Row gutter={12}>
                         <Col span={12}>
                             <StyledFormItem name="DBServerName" label="Database Server Name" rules={[{ required: true, message: "Please input database server name!" }]}>
                                 <StyledInput  />
@@ -241,7 +278,7 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
                         </Col>
 
                         <Col span={12}>
-                            <StyledFormItem name="BackUpPath" label="Backup Path" >
+                            <StyledFormItem name="BackupPath" label="Source Code Backup Path" >
                                 <StyledInput  />
                             </StyledFormItem>
                         </Col>
@@ -249,8 +286,8 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
 
                     <Row gutter={12}>
                         <Col span={12}>
-                            <StyledFormItem name="ScheduleType" label="Schecule Type" >
-                                <StyledInput  readOnly />
+                            <StyledFormItem name="FileBackupPath" label="File Backup Path" >
+                                <StyledInput  />
                             </StyledFormItem>
                         </Col>
 
@@ -266,7 +303,75 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
                             </StyledFormItem>
                         </Col>
                     </Row>
+               
+                    <p style={{ fontWeight: 600, letterSpacing: 0.7, fontSize: 15,color: "#1677ff" }}> Folder Settings </p>
+                   
+                    <Form.List name="folders">
+                        {(fields, { add, remove }) => (
+                            <>
+                            {fields.map(({ key, name, ...restField }) => (
+                                <Row key={key} style={{ display: 'flex', marginBottom: 8 }} gutter={[16,16]}>
+
+                                
+                                    <Col span={12}>
+                                        <Form.Item
+                                            {...restField}
+                                            name={[name, 'FolderPath']}
+                                            rules={[{ required: true, message: 'Missing Folder Path' }]}
+                                            label="Folder Path"
+                                        >
+                                            <StyledInput placeholder="Folder Path"/>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={5}>
+                                        <Form.Item
+                                            {...restField}
+                                            name={[name, 'FileBackupAction']}
+                                            rules={[{ required: true, message: 'Missing Action' }]}
+                                            label="File Backup Action"
+                                        >
+                                            <Select placeholder="Please select Action">
+                                                <Select.Option value="copy">copy</Select.Option>
+                                                <Select.Option value="delete">delete</Select.Option>
+                                                <Select.Option value="move">move</Select.Option>
+                                                <Select.Option value="skip">skip</Select.Option>
+                                            </Select>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={5}>
+                                        <Form.Item
+                                            {...restField}
+                                            name={[name, 'SourceCodeBackupAction']}
+                                            rules={[{ required: true, message: 'Missing Action' }]}
+                                            label="Source Code Backup Action"
+                                        >
+                                            <Select placeholder="Please select Action">
+                                                <Select.Option value="copy">copy</Select.Option>
+                                                <Select.Option value="delete">delete</Select.Option>
+                                                <Select.Option value="move">move</Select.Option>
+                                                <Select.Option value="skip">skip</Select.Option>
+                                                <Select.Option value="structure">structure</Select.Option>
+                                            </Select>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={1}>
+                                        <MinusCircleOutlined onClick={() => remove(name)} />
+                                    </Col>
+                                    
+                                </Row>
+                            ))}
+                            <Col span={24}>
+                                <Form.Item>
+                                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                                    Add field
+                                    </Button>
+                                </Form.Item>
+                            </Col>
+                            </>
+                        )}
+                    </Form.List>
                 </Card>
+                
 
             </Form>
 
