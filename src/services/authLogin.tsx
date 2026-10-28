@@ -1,29 +1,29 @@
 import { message } from "antd";
 import API from "../api/api"; 
-import { handleLoggedAction } from "../utils/Logger";
 
 const API_URL = import.meta.env.VITE_SERVER_API_URL
 
 export const handleLogin = async(
     values: {username: string, password: string},
-    navigate: (path:string) => void,
-    setUserId: (id :string) => void
+    setLoading: (loading: boolean) => void
 ) => {
     try {
+        setLoading(true);
         const response  = await API.post(`${API_URL}/auth/login`, values);
 
-        const user = response.data.user
-        localStorage.setItem("user", user)
-        setUserId(user)
-        message.success(response.data.message)
-        handleLoggedAction(user, 'LOGIN SUCCESS', '')
-        
-        navigate("/home-redirect");
-       
+        if (response.data.status === "mfa_required") {
+            window.location.href = response.data.mfa_url;
+            return;
+        }
+        setLoading(false);
+
     }
-    catch(error:any){
-        message.error("Invalid user credentials!")
-    }
+    catch (error: any) {
+      console.error("LOGIN ERROR:", error);
+      message.error(
+          error.response?.data?.message || "Invalid user credentials!"
+      );
+  }
 }
 
 export const confirmPass = async (password: string) => {

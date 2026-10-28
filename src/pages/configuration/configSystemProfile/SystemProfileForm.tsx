@@ -33,6 +33,7 @@ const SystemProfileForm: React.FC<DrawerProps & { record?: SystemProfileProps | 
             form.resetFields();
             form.setFieldsValue({
                 Status: 1, // default Active for new
+                ScheduleType: "Monthly",
             });
         }
     }, [drawerMode, record, form]);

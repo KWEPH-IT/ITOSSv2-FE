@@ -7,10 +7,12 @@ import { Loader } from './components/Loader';
 import Login from './pages/login';
 
 // Lazily-loaded pages
+const MFACallback = lazy(() => import('./pages/mfa/mfa-callback'))
 const HomeRedirect = lazy(() => import('./pages/Home/HomeRedirect'));
 const Home = lazy(() => import('./pages/Home/Home'));
 const UserHome = lazy(() => import('./pages/Home/UserHome'));
 const UnauthorizedPage = lazy(() => import('./pages/Unauthorized'));
+
 
 const SystemProfilePage = lazy(() => import('./pages/configuration/configSystemProfile/SystemProfilePage'));
 const DBColumnsPage = lazy(() => import('./pages/configuration/configDBColumns/DBColumnsPage'));
@@ -42,6 +44,7 @@ const App = () => {
         <Routes>
           {/* Default route to Login */}
           <Route path="/" element={<Login/>} />
+          <Route path="/mfa-callback" element={<MFACallback/>} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           {/* Protected Routes */}
