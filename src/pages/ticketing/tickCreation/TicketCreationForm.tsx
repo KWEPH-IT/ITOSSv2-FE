@@ -228,14 +228,14 @@ const TicketCreationForm = () => {
           // GROUP EMAIL
           // ==========================================
           if (cleanedCustomFields.GroupName) {
-              cleanedCustomFields.GroupName =
-                  `KWEPH - Group Email - ${cleanedCustomFields.GroupName}`;
-          }
-  
-          if (cleanedCustomFields.GroupEmailAddress) {
-              cleanedCustomFields.GroupEmailAddress =
-                  `${cleanedCustomFields.GroupName}.kweph@kwe.com`;
-          }
+            const originalGroupName = cleanedCustomFields.GroupName;
+        
+            cleanedCustomFields.GroupName =
+                `KWEPH - Group Email - ${originalGroupName}`;
+        
+            cleanedCustomFields.GroupEmailAddress =
+             `${originalGroupName.replace(/\s+/g, '').toLowerCase()}.kweph@kwe.com`;
+        }
   
           // ==========================================
           // REMOVE FILE UPLOADERS FROM CUSTOM FIELDS
