@@ -38,7 +38,7 @@ const MFACallback = () => {
 
                 if (
                     response.data.authenticated &&
-                    response.data.user === user
+                    response.data.emp_id === user
                 ) {
                     localStorage.setItem("user", user);
 
