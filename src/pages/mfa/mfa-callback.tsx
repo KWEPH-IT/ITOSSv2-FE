@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { message, Spin } from "antd";
-import API from "../../utils/API"; // Adjust to your Axios instance
+import API from "../api/api"; // Adjust to your Axios instance
 
 const MFACallback = () => {
     const navigate = useNavigate();
