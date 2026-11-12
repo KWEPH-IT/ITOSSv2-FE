@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { message, Spin } from "antd";
 import API from "../../api/api";
 
-const API_URL = import.meta.env.VITE_SERVER_API_URL
+const API_URL = import.meta.env.VITE_SERVER_API_URL;
 
 const MFACallback = () => {
     const navigate = useNavigate();
@@ -17,20 +17,13 @@ const MFACallback = () => {
             const status = searchParams.get("status");
             const user = searchParams.get("user");
 
-            if (status !== "success") {
+            if (status !== "success" || !user) {
                 message.error("MFA verification failed.");
-                navigate("/login", { replace: true });
-                return;
-            }
-
-            if (!user) {
-                message.error("Unable to identify user!");
-                navigate("/login", { replace: true });
+                navigate("/", { replace: true });
                 return;
             }
 
             try {
-                // Verify the actual HttpOnly cookie
                 const response = await API.get(
                     `${API_URL}/auth/verify_token`,
                     { withCredentials: true }
@@ -38,29 +31,34 @@ const MFACallback = () => {
 
                 if (!active) return;
 
-                if (
-                    response.data.authenticated &&
-                    response.data.emp_id === user
-                ) {
-                    localStorage.setItem("user", user);
+                const authenticated =
+                    response.data.authenticated === true &&
+                    String(response.data.emp_id) === String(user);
 
-                    message.success("MFA verification successful.");
-
-                    navigate("/home-redirect", {
-                        replace: true
-                    });
-                } else {
+                if (!authenticated) {
                     message.error("Session verification failed.");
                     navigate("/", { replace: true });
+                    return;
                 }
 
-            } catch (error) {
+                localStorage.setItem("user", user);
+
+                message.success("MFA verification successful.");
+
+                navigate("/home-redirect", {
+                    replace: true
+                });
+
+            } catch (error: any) {
                 if (!active) return;
 
-                console.error("Session verification error:", error);
+                console.error(
+                    "MFA session verification failed:",
+                    error.response?.data || error
+                );
 
                 message.error(
-                    "Unable to verify your session. Please try logging in again."
+                    "Unable to verify your session. Please log in again."
                 );
 
                 navigate("/", { replace: true });
