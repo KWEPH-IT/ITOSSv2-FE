@@ -1,58 +1,88 @@
+
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { message, Spin } from "antd";
-import { handleLoggedAction } from "../../utils/Logger";
+import API from "../../utils/API"; // Adjust to your Axios instance
 
 const MFACallback = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
     useEffect(() => {
-        const status = searchParams.get("status");
-        const user = searchParams.get("user");
+        let active = true;
 
-        if (status === "success") {
+        const verifySession = async () => {
+            const status = searchParams.get("status");
+            const user = searchParams.get("user");
 
-            if (!user) {
-                message.error("Unable to identify user!");
-                navigate("/");
+            if (status !== "success") {
+                message.error("MFA verification failed.");
+                navigate("/login", { replace: true });
                 return;
             }
 
-            localStorage.setItem("user", user);
-            console.log(user)
+            if (!user) {
+                message.error("Unable to identify user!");
+                navigate("/login", { replace: true });
+                return;
+            }
 
-            message.success("MFA verification successful.");
+            try {
+                // Verify the actual HttpOnly cookie
+                const response = await API.get(
+                    "/auth/verify_token",
+                    { withCredentials: true }
+                );
 
-            handleLoggedAction(
-                user,
-                "LOGIN SUCCESS",
-                ""
-            );
+                if (!active) return;
 
-            navigate("/home-redirect", { replace: true });
+                if (
+                    response.data.authenticated &&
+                    response.data.user === user
+                ) {
+                    localStorage.setItem("user", user);
 
-        } else {
-            message.error("MFA verification failed.");
+                    message.success("MFA verification successful.");
 
-            navigate("/login", { replace: true });
-        }
+                    navigate("/home-redirect", {
+                        replace: true
+                    });
+                } else {
+                    message.error("Session verification failed.");
+                    navigate("/login", { replace: true });
+                }
+
+            } catch (error) {
+                if (!active) return;
+
+                console.error("Session verification error:", error);
+
+                message.error(
+                    "Unable to verify your session. Please try logging in again."
+                );
+
+                navigate("/login", { replace: true });
+            }
+        };
+
+        verifySession();
+
+        return () => {
+            active = false;
+        };
 
     }, [searchParams, navigate]);
 
     return (
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "100vh"
-            }}
-        >
+        <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh"
+        }}>
             <Spin size="large" />
         </div>
     );
 };
 
 export default MFACallback;
-
