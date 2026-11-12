@@ -1,14 +1,14 @@
-
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { message, Spin } from "antd";
 import API from "../../api/api";
-
-const API_URL = import.meta.env.VITE_SERVER_API_URL;
+import { useAuth } from "../../context/AuthContext";
 
 const MFACallback = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+
+    const { setUserId } = useAuth();
 
     useEffect(() => {
         let active = true;
@@ -18,48 +18,45 @@ const MFACallback = () => {
             const user = searchParams.get("user");
 
             if (status !== "success" || !user) {
-                message.error("MFA verification failed.");
                 navigate("/", { replace: true });
                 return;
             }
 
             try {
                 const response = await API.get(
-                    `${API_URL}/auth/verify_token`,
+                    "/auth/verify_token",
                     { withCredentials: true }
                 );
 
                 if (!active) return;
 
-                const authenticated =
+                if (
                     response.data.authenticated === true &&
-                    String(response.data.emp_id) === String(user);
+                    String(response.data.emp_id) === String(user)
+                ) {
+                    // Update localStorage
+                    localStorage.setItem("user", user);
 
-                if (!authenticated) {
+                    // IMPORTANT: Update React AuthContext
+                    setUserId(user);
+
+                    message.success("MFA verification successful.");
+
+                    navigate("/home-redirect", {
+                        replace: true
+                    });
+
+                } else {
                     message.error("Session verification failed.");
                     navigate("/", { replace: true });
-                    return;
                 }
 
-                localStorage.setItem("user", user);
-
-                message.success("MFA verification successful.");
-
-                navigate("/home-redirect", {
-                    replace: true
-                });
-
-            } catch (error: any) {
+            } catch (error) {
                 if (!active) return;
 
-                console.error(
-                    "MFA session verification failed:",
-                    error.response?.data || error
-                );
+                console.error("MFA verification error:", error);
 
-                message.error(
-                    "Unable to verify your session. Please log in again."
-                );
+                message.error("Unable to verify your session.");
 
                 navigate("/", { replace: true });
             }
@@ -71,7 +68,7 @@ const MFACallback = () => {
             active = false;
         };
 
-    }, [searchParams, navigate]);
+    }, [searchParams, navigate, setUserId]);
 
     return (
         <div style={{
