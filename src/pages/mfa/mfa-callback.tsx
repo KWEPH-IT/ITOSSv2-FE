@@ -2,7 +2,9 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { message, Spin } from "antd";
-import API from "../../api/api"; // Adjust to your Axios instance
+import API from "../../api/api";
+
+const API_URL = import.meta.env.VITE_SERVER_API_URL
 
 const MFACallback = () => {
     const navigate = useNavigate();
@@ -30,7 +32,7 @@ const MFACallback = () => {
             try {
                 // Verify the actual HttpOnly cookie
                 const response = await API.get(
-                    "/auth/verify_token",
+                    `${API_URL}/auth/verify_token`,
                     { withCredentials: true }
                 );
 
@@ -49,7 +51,7 @@ const MFACallback = () => {
                     });
                 } else {
                     message.error("Session verification failed.");
-                    navigate("/login", { replace: true });
+                    navigate("/", { replace: true });
                 }
 
             } catch (error) {
@@ -61,7 +63,7 @@ const MFACallback = () => {
                     "Unable to verify your session. Please try logging in again."
                 );
 
-                navigate("/login", { replace: true });
+                navigate("/", { replace: true });
             }
         };
 
