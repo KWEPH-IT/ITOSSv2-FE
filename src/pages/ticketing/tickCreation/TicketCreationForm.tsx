@@ -502,6 +502,17 @@ const TicketCreationForm = () => {
     return groups;
   }, [customFields]);
 
+  const isLeafCategorySelected = useMemo(() => {
+    const lastSelected = selectedValues[selectedValues.length - 1];
+    if (!lastSelected) return false;
+  
+    const hasChildren = (allCategories ?? []).some(
+      (cat: TicketCategProps) => cat.ParentId === lastSelected
+    );
+  
+    return !hasChildren;
+  }, [selectedValues, allCategories]);
+
   useEffect(() => {
     if(!userId && !userData) return;
       handleApprover(userData?.DepartmentHead, userData?.DeptHeadId, userData?.ImmediateSupervisor, userData?.SuperiorId)
@@ -750,7 +761,13 @@ const TicketCreationForm = () => {
                   </Button>
                 </Link>
 
-                <Button type="primary" htmlType='submit'>
+                <Button type="primary" htmlType='submit' 
+                disabled={
+                  loading ||
+                  isSubmit ||
+                  !isLeafCategorySelected ||
+                  (modules.length > 0 && selectedModules.length === 0)
+                }>
                   Submit Request
                 </Button>
               </div>
