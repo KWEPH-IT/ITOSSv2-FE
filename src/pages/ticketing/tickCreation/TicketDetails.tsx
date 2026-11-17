@@ -858,7 +858,7 @@ const TicketDetails = () => {
                                 boxShadow: "0 4px 12px rgba(22,119,255,.25)",
                             }}
                             icon={<CheckCircleOutlined />}>
-                            Mark as Resolved
+                            Mark as Completed
                         </Button>
                     ): selectedTicket.Status === "For Closing" && selectedTicket.RequestorId === userId ? (
                         <Col>

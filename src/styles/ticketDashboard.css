@@ -20,3 +20,10 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Soft shadow for depth */
     border: 1px solid rgba(255, 255, 255, 0.3);
   }
+
+
+  .request-type-filter .ant-select-selection-search-input,
+  .request-type-filter .ant-select-selection-placeholder,
+  .request-type-filter-popup .ant-select-item {
+    font-size: 11px !important;
+  }
