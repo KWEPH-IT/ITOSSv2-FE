@@ -3,7 +3,7 @@ import MainLayout from "../../MainLayout";
 import "../../../styles/ticketDashboard.css"
 import { StyledTable } from "../../../components/StyledTable";
 import { SearchContainer, SearchInput } from "../../../components/StyledComponents";
-import { Row, Col, Space, Checkbox, Dropdown, Button, Tag } from "antd";
+import { Row, Col, Space, Checkbox, Dropdown, Button, Tag, AutoComplete } from "antd";
 import { SearchOutlined, SettingOutlined, MenuOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
 import { useTickets } from "../../../hooks/ticketing/ticketing_hooks";
 import { useTicketApprovers } from "../../../hooks/configuration/ticketApprover_hooks";
@@ -22,6 +22,35 @@ import { vwAtKWEProps } from "../../../types/vwAtKWE_drawer";
 import { useAuth } from "../../../context/AuthContext";
 dayjs.extend(relativeTime);
 
+function usePersistedState<T>(key: string, defaultValue: T) {
+  const [state, setState] = useState<T>(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved === null) return defaultValue;
+
+      const parsed = JSON.parse(saved);
+
+      // merge objects so newly added keys still get their defaults
+      return typeof defaultValue === "object" &&
+        defaultValue !== null &&
+        !Array.isArray(defaultValue)
+        ? { ...defaultValue, ...parsed }
+        : parsed;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch {
+      // storage unavailable — ignore
+    }
+  }, [key, state]);
+
+  return [state, setState] as const;
+}
 
 type ButtonColor =
   | "default"
@@ -92,7 +121,7 @@ const SortableColumn = ({
   );
 };
 
-type CheckedKey = "unassigned" | "assigned" | "processing" | "closed";
+type CheckedKey = "unassigned" | "assigned" | "processing" | "forclosing" | "closed";
 
 const TicketDashboardPage = () => {
     const filters = useMemo(() => ({}), []);
@@ -101,8 +130,18 @@ const TicketDashboardPage = () => {
     const [ search, setSearch ] = useState("");
     const [ filtered, setFiltered ] = useState<TicketProps[]>([]);
     const { employees, loading: empLoading } = getEmployees();
-    const [ selectedMembers, setSelectedMembers ] = useState<string[]>([]);
-    const [showMyTickets, setShowMyTickets] = useState(false);
+    const [selectedMembers, setSelectedMembers] = usePersistedState<string[]>(
+      "ticketDashboard_members",
+      []
+    );
+    const [showMyTickets, setShowMyTickets] = usePersistedState<boolean>(
+      "ticketDashboard_myTickets",
+      false
+    );
+    const [requestTypeText, setRequestTypeText] = usePersistedState<string>(
+      "ticketDashboard_requestTypeText",
+      ""
+    );
     const { userId } = useAuth();
     const navigate = useNavigate();
 
@@ -122,12 +161,16 @@ const TicketDashboardPage = () => {
     
     const userColor = userId ? getTagColor(userId) : "default";
 
-    const [checked, setChecked] = useState<Record<CheckedKey, boolean>>({
+    const [checked, setChecked] = usePersistedState<Record<CheckedKey, boolean>>(
+      "ticketDashboard_status",
+      {
         unassigned: false,
         assigned: false,
         processing: false,
+        forclosing: false,
         closed: false,
-      });
+      }
+    );
     
 
     const maxLevelPerCategory = useMemo(() => {
@@ -164,6 +207,7 @@ const TicketDashboardPage = () => {
     const getTicketBucket = (t: TicketProps) => {
         if (t.Status === "Closed") return "closed";
         if (t.Status === "On Process") return "processing";
+        if (t.Status === "For Closing") return "forclosing";
         if (t.AssignedTo) return "assigned";
         return "unassigned";
     };
@@ -182,6 +226,7 @@ const TicketDashboardPage = () => {
         if (checked.unassigned) activeFilters.push("unassigned");
         if (checked.assigned) activeFilters.push("assigned");
         if (checked.processing) activeFilters.push("processing");
+        if (checked.forclosing) activeFilters.push("forclosing");
         if (checked.closed) activeFilters.push("closed");
       
         // if nothing selected → show all final tickets
@@ -347,6 +392,19 @@ const TicketDashboardPage = () => {
         </div>
     );
 
+    const requestTypeSuggestions = useMemo(() => {
+      const names = Array.from(
+        new Set(finalTickets.map((t: any) => t.RequestName).filter(Boolean))
+      ) as string[];
+    
+      return names
+        .filter((n) => n.toLowerCase().includes(requestTypeText.toLowerCase()))
+        .sort((a, b) => a.localeCompare(b))
+        .map((n) => ({ value: n }));
+    }, [finalTickets, requestTypeText]);
+
+  
+
     const handleSearch = (e : React.ChangeEvent<HTMLInputElement>) =>{
         const value = e.target.value.toLowerCase();
         setSearch(value)
@@ -363,16 +421,22 @@ const TicketDashboardPage = () => {
         const matchesMember =
           selectedMembers.length === 0 ||
           selectedMembers.includes(t.AssignedTo);
+        
     
         const matchesMyTickets =
           !showMyTickets || t.AssignedTo === userId;
-    
-        return matchesSearch && matchesMember && matchesMyTickets;
+
+        const matchesRequestType =
+          !requestTypeText ||
+          (t.RequestName?.toLowerCase() || "").includes(requestTypeText.toLowerCase());
+  
+        return matchesSearch && matchesMember && matchesMyTickets && matchesRequestType;
+
       });
     
       setFiltered(filtered);
     
-    }, [filteredTickets, search, selectedMembers, showMyTickets, userId]);
+    }, [filteredTickets, search, selectedMembers, showMyTickets, userId, requestTypeText]);
 
     if (loading || empLoading) return <Loader />;
 
@@ -381,7 +445,17 @@ const TicketDashboardPage = () => {
         <Row gutter={[16, 16]}>
             <Col span={24}>
             <SearchContainer>
-                <SearchInput placeholder="Search by Ticket Number, Request Type" style={{ width: "400px" }} suffix={<SearchOutlined />} value={search} onChange={handleSearch} />
+                <SearchInput placeholder="Search by Ticket Number" style={{ width: "200px" }} suffix={<SearchOutlined />} value={search} onChange={handleSearch} />
+                <AutoComplete
+                  value={requestTypeText}
+                  options={requestTypeSuggestions}
+                  className="request-type-filter"
+                  popupClassName="request-type-filter-popup"
+                  onChange={(value) => setRequestTypeText(value ?? "")}
+                  allowClear
+                  placeholder="Filter by request type"
+                  style={{ width: 250 }}
+                />
             </SearchContainer>
             </Col>
         </Row>
@@ -401,6 +475,7 @@ const TicketDashboardPage = () => {
                           { label: "Unassigned", value: "unassigned" },
                           { label: "Assigned", value: "assigned" },
                           { label: "On Process", value: "processing" },
+                          { label: "For Closing", value: "forclosing" },
                           { label: "Closed", value: "closed" }
                       ]}
                       value={(Object.keys(checked) as CheckedKey[]).filter(
@@ -413,6 +488,7 @@ const TicketDashboardPage = () => {
                             unassigned: values.includes("unassigned"),
                             assigned: values.includes("assigned"),
                             processing: values.includes("processing"),
+                            forclosing: values.includes("forclosing"),
                             closed: values.includes("closed"),
                           });
                       }}
@@ -441,12 +517,7 @@ const TicketDashboardPage = () => {
                   </Button>
                   </Dropdown>
 
-                  
-
-
-                </Space>
-
-                
+                </Space>                
             </div>
             </Col>
         </Row>
@@ -463,16 +534,26 @@ const TicketDashboardPage = () => {
                 pagination={{ size: "small" }}
                 rowKey="TicketNumber"
                 tableLayout="fixed"
-                onRow={(record:TicketProps) => ({
-                    style: {
-                      fontSize: "12px",
-                      cursor: "pointer"
+                onRow={(record: TicketProps) => {
+                  const url = `/ticketDetails/${btoa(record.TicketNumber)}`;
+                
+                  return {
+                    title: "Ctrl + Click to open in a new tab",
+                    style: { fontSize: "12px", cursor: "pointer" },
+                
+                    onClick: (e) => {
+                      if (e.ctrlKey || e.metaKey) {
+                        window.open(url, "_blank");   // Ctrl/Cmd + click → new tab
+                      } else {
+                        navigate(url);
+                      }
                     },
-    
-                    onClick: () => {
-                      navigate(`/ticketDetails/${btoa(record.TicketNumber)}`) 
-                    }
-                  })}  
+                
+                    onAuxClick: (e) => {
+                      if (e.button === 1) window.open(url, "_blank"); // middle-click → new tab
+                    },
+                  };
+                }}
             />
             </Col>
         </Row>
