@@ -3,6 +3,7 @@ import MainLayout from '../../MainLayout'
 import TicketAssignmentModal from './TicketAssignmentModal';
 import "../../../styles/userTicketDetails.css";
 import { Card, Row, Col, Tag, Typography, Divider, Avatar, Tabs, Space, Button, Dropdown, message, Upload, Form, Timeline, Modal, Popconfirm, Descriptions} from 'antd';
+import type { UploadFile, RcFile } from "antd/es/upload/interface";
 import { StyledTable } from '../../../components/StyledTable';
 import { StyledInput, StyledTextArea } from '../../../components/StyledComponents';
 import { useParams } from 'react-router-dom';
@@ -19,6 +20,7 @@ import { handleLoggedAction } from '../../../utils/Logger';
 import { useAuth } from '../../../context/AuthContext';
 import { getEmployees } from '../../../hooks/configuration/vwAtKWE_hooks';
 import { getFullName } from '../../../utils/getEmployeeDetails';
+import { parseCustomFields } from '../../../utils/parseCustomFields';
 import API from '../../../api/api';
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -70,6 +72,12 @@ const TicketDetails = () => {
     const fields = category?.[0]?.custom_fields;
     const fieldsValue = selectedTicket?.custom_fields?.[0]?.CustomFields || {};
     const modules = selectedTicket?.modules || [];
+    
+    const customFields = useMemo(
+        () => parseCustomFields(fieldsValue),
+        [selectedTicket]
+    );
+
 
     const approvals = category?.[0]?.approvers || [];
     
@@ -429,40 +437,72 @@ const TicketDetails = () => {
         onClick: handleMenuClick,
     };
 
-    const handleSubmitMessage = async() => {
-        try{
-            if(!mensahe){
-                message.warning("Not message typed");
-                return;
-            }
-            handleLoggedAction(userId!, 'SENT MESSAGE', "Sent message!")
+    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const images = Array.from(e.clipboardData.items)
+          .filter((item) => item.type.startsWith("image/"))
+          .map((item) => item.getAsFile())
+          .filter(Boolean) as File[];
+      
+        if (images.length === 0) return; // plain text → paste normally
+      
+        // stop the browser pasting junk, but keep text if there's also text
+        if (!e.clipboardData.getData("text/plain")) e.preventDefault();
+      
+        const now = Date.now();
+      
+        const pasted: UploadFile[] = images.map((img, i) => {
+          const ext = img.type.split("/")[1] || "png";
+          const file = new File([img], `pasted-image-${now}-${i}.${ext}`, { type: img.type });
+      
+          return {
+            uid: `paste-${now}-${i}`,
+            name: file.name,
+            status: "done",
+            type: file.type,
+            originFileObj: file as RcFile,
+            thumbUrl: URL.createObjectURL(file),
+          };
+        });
+      
+        setFileList((prev) => [...prev, ...pasted]);
+      };
 
-            const formData = new FormData();
-            formData.append("ticketno", decoded_tn);
-            formData.append("message", mensahe);
-        
-            fileList.forEach((file) => {
-                formData.append("files", file);
-            });
-
-            const response = await API.post(`/api/message`, formData, {
-                headers: {
-                  "Content-Type": "multipart/form-data",
-                },
-              });
-            message.success(response.data.message);
-
-            setMessage("")
-            setFileList([]);
-            await refetch();
+    const handleSubmitMessage = async () => {
+        try {
+          // allow image-only messages (e.g. just a pasted screenshot)
+          if (!mensahe.trim() && fileList.length === 0) {
+            message.warning("Please type a message or attach a file.");
+            return;
+          }
+      
+          const formData = new FormData();
+          formData.append("ticketno", decoded_tn);
+          formData.append("message", mensahe);
+      
+          fileList.forEach((file: any) => {
+            // uploaded files are raw File objects; pasted ones wrap the File in originFileObj
+            const actualFile = file.originFileObj ?? file;
+            formData.append("files", actualFile, actualFile.name);
+          });
+      
+          const response = await API.post(`/api/message`, formData);
+      
+          handleLoggedAction(userId!, "SENT MESSAGE", "Sent message!");
+          message.success(response.data.message);
+      
+          // free the pasted-image previews
+          fileList.forEach((file: any) => {
+            if (file.thumbUrl?.startsWith("blob:")) URL.revokeObjectURL(file.thumbUrl);
+          });
+      
+          setMessage("");
+          setFileList([]);
+          await refetch();
+        } catch (e: any) {
+          console.error(e);
+          message.error(e.response?.data?.message || "Failed to send message");
         }
-        catch(e: any){
-            console.error(e);
-            message.error(
-                e.response?.data?.message || "Failed to send message"
-            );
-        }
-    }       
+    };     
 
     const handleConfirm = async() => {
         try{
@@ -692,13 +732,41 @@ const TicketDetails = () => {
             <Card className="card">
                 {/* TOP SECTION */}
                 <Row justify="space-between" align="top">
-                    <Col>
-                        <Tag color="blue" style={{ padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600,}}>
-                            {decoded_tn}
-                        </Tag>
-                        <Title style={{ marginTop: 10, marginBottom: 0, fontSize:28, fontWeight: 700, lineHeight: 1.2, color: "#172B4D",}}>
-                            {selectedTicket?.RequestName}
-                        </Title>
+                <Col>
+                    <Tag
+                        color="blue"
+                        style={{ padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600 }}
+                    >
+                        {decoded_tn}
+                    </Tag>
+
+                    <Title
+                        style={{
+                        marginTop: 10,
+                        marginBottom: 0,
+                        fontSize: 28,
+                        fontWeight: 700,
+                        lineHeight: 1.2,
+                        color: "#172B4D",
+                        }}
+                    >
+                        {selectedTicket?.RequestName}
+                    </Title>
+
+                    {customFields.ShortDescription && (
+                        <Typography.Text
+                        style={{
+                            display: "block",
+                            marginTop: 6,
+                            fontSize: 13,
+                            color: "#5E6C84",
+                            maxWidth: 700,
+                        }}
+                        ellipsis={{ tooltip: customFields.ShortDescription }}
+                        >
+                        {customFields.ShortDescription}
+                        </Typography.Text>
+                    )}
                     </Col>
                     <Col>
                         <Row gutter={40} align="middle">
@@ -937,7 +1005,15 @@ const TicketDetails = () => {
                                                 fontSize: 12,
                                                 }}
                                             >
-                                                📎 {file.name}
+                                                📎{file.type?.startsWith("image/") && file.thumbUrl ? (
+                                                    <img
+                                                        src={file.thumbUrl}
+                                                        alt={file.name}
+                                                        style={{ height: 40, maxWidth: 80, objectFit: "cover", borderRadius: 6 }}
+                                                    />
+                                                    ) : (
+                                                    <>📎 {file.name}</>
+                                                    )}
 
                                                 <span
                                                     onClick={() => handleRemoveFile(file.uid)}
@@ -956,15 +1032,13 @@ const TicketDetails = () => {
 
                                         {/* Text area */}
                                         <StyledTextArea
-                                        placeholder="Type your message here..."
-                                        autoSize={{ minRows: 2, maxRows: 3 }}
-                                        value={mensahe}
-                                        onChange={(e) => setMessage(e.target.value)}
-                                        bordered={false}
-                                        style={{
-                                            padding: 0,
-                                            fontSize: 12,
-                                        }}
+                                            placeholder="Type your message or paste an image.."
+                                            autoSize={{ minRows: 4, maxRows: 5 }}
+                                            value={mensahe}
+                                            onChange={(e) => setMessage(e.target.value)}
+                                            onPaste={handlePaste}
+                                            bordered={false}
+                                            style={{ padding: 0, fontSize: 12 }}
                                         />
                                     </div>
                                 </Col>
@@ -1034,9 +1108,13 @@ const TicketDetails = () => {
                                                     {item.SenderName}
                                                 </Text>
 
-                                                <Text style={{ fontSize: 12, color: "#000", }}>
-                                                    {item.Message} 
-                                                </Text>
+                                                
+                                                <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                                                    <Text style={{ fontSize: 12, color: "#000", }}>
+                                                        {item.Message}
+                                                    </Text>
+                                                </div>
+                                                
                                                 {item.Files?.map((file: any) => {
 
                                                     const ext = file.FileName.split(".").pop().toLowerCase();
