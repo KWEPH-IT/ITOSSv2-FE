@@ -83,7 +83,7 @@ const UserHome = () => {
 
             {/* DASHBOARD CARDS */}
             { <Row gutter={[24, 24]} style={{ marginTop: "30px" }}>
-                <Col md={12} sm={24}>
+                <Col md={16} sm={24}>
                     <OpenRequestsPanel/>
                 </Col>
                 { userId === 'K656' ? 
