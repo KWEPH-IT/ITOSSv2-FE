@@ -1,3 +1,4 @@
+
 import React, { useMemo } from "react";
 import { Row, Col, Tag, Badge } from "antd";
 import { Loader } from "../../components/Loader";
@@ -13,8 +14,9 @@ import { useAuth } from "../../context/AuthContext";
 import { TicketProps } from "../../types/Ticketing_drawer";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-dayjs.extend(relativeTime);
 import { useNavigate } from "react-router-dom";
+
+dayjs.extend(relativeTime);
 
 /* ---------- Stat cards ---------- */
 
@@ -28,7 +30,11 @@ interface StatCardProps {
   valueColor: string;
 }
 
-type DashboardStatus = "Pending" | "Assigned" | "Processing";
+type DashboardStatus =
+  | "Pending"
+  | "Assigned"
+  | "Processing"
+  | "For Closing";
 
 const getDashboardStatus = (status: string): DashboardStatus => {
   switch (status) {
@@ -44,6 +50,9 @@ const getDashboardStatus = (status: string): DashboardStatus => {
 
     case "On Process":
       return "Processing";
+
+    case "For Closing":
+      return "For Closing";
 
     default:
       return "Pending";
@@ -86,11 +95,26 @@ const StatCard: React.FC<StatCardProps> = ({
     >
       {icon}
     </div>
-    <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-      <span style={{ fontSize: 20, fontWeight: 700, color: valueColor }}>
+
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        lineHeight: 1.2,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: valueColor,
+        }}
+      >
         {value}
       </span>
-      <span style={{ fontSize: 12, color: "#8c8c8c" }}>{label}</span>
+      <span style={{ fontSize: 12, color: "#8c8c8c" }}>
+        {label}
+      </span>
     </div>
   </div>
 );
@@ -99,7 +123,13 @@ const StatCard: React.FC<StatCardProps> = ({
 
 const statusStyles: Record<
   DashboardStatus,
-  { label: string; bg: string; color: string; iconBg: string; icon: React.ReactNode }
+  {
+    label: string;
+    bg: string;
+    color: string;
+    iconBg: string;
+    icon: React.ReactNode;
+  }
 > = {
   Pending: {
     label: "Pending Approval",
@@ -108,6 +138,7 @@ const statusStyles: Record<
     iconBg: "#FCE8D4",
     icon: <ClockCircleOutlined style={{ color: "#F2994A" }} />,
   },
+
   Assigned: {
     label: "Assigned",
     bg: "#D6E8FD",
@@ -115,6 +146,7 @@ const statusStyles: Record<
     iconBg: "#D6E8FD",
     icon: <UserOutlined style={{ color: "#2F80ED" }} />,
   },
+
   Processing: {
     label: "On Process",
     bg: "#E9DFF7",
@@ -122,12 +154,20 @@ const statusStyles: Record<
     iconBg: "#E9DFF7",
     icon: <SyncOutlined style={{ color: "#9B51E0" }} />,
   },
+
+  "For Closing": {
+    label: "For Closing",
+    bg: "#E2F3E8",
+    color: "#23834A",
+    iconBg: "#D5EEDD",
+    icon: <FileTextOutlined style={{ color: "#36A269" }} />,
+  },
 };
 
-const RequestRow: React.FC<{ item: TicketProps; isLast: boolean }> = ({
-  item,
-  isLast,
-}) => {
+const RequestRow: React.FC<{
+  item: TicketProps;
+  isLast: boolean;
+}> = ({ item, isLast }) => {
   const dashboardStatus = getDashboardStatus(item.Status);
   const s = statusStyles[dashboardStatus];
   const navigate = useNavigate();
@@ -142,7 +182,9 @@ const RequestRow: React.FC<{ item: TicketProps; isLast: boolean }> = ({
         borderBottom: isLast ? "none" : "1px solid #F0F0F0",
         cursor: "pointer",
       }}
-      onClick={() => navigate(`/ticketDetails/${btoa(item.TicketNumber)}`)}
+      onClick={() =>
+        navigate(`/ticketDetails/${btoa(item.TicketNumber)}`)
+      }
     >
       <div
         style={{
@@ -161,15 +203,39 @@ const RequestRow: React.FC<{ item: TicketProps; isLast: boolean }> = ({
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
-          <span style={{ fontWeight: 600, fontSize: 13, color: "#222" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            marginBottom: 2,
+          }}
+        >
+          <span
+            style={{
+              fontWeight: 600,
+              fontSize: 13,
+              color: "#222",
+            }}
+          >
             {item.TicketNumber}
           </span>
         </div>
-        <div style={{ fontSize: 12, color: "#595959" }}>{item.RequestName}</div>
+
+        <div style={{ fontSize: 12, color: "#595959" }}>
+          {item.RequestName}
+        </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, minWidth: 140 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: 6,
+          minWidth: 140,
+        }}
+      >
         <Tag
           style={{
             background: s.bg,
@@ -182,14 +248,26 @@ const RequestRow: React.FC<{ item: TicketProps; isLast: boolean }> = ({
         >
           {s.label}
         </Tag>
-        <div style={{ fontSize: 12, color: "#8c8c8c" }}>{item.Status}</div>
+
+        <div style={{ fontSize: 12, color: "#8c8c8c" }}>
+          {item.Status}
+        </div>
       </div>
 
-      <div style={{ textAlign: "right", minWidth: 90, fontSize: 12, color: "#8c8c8c" }}>
+      <div
+        style={{
+          textAlign: "right",
+          minWidth: 90,
+          fontSize: 12,
+          color: "#8c8c8c",
+        }}
+      >
         <div>{dayjs(item.DateCreated).fromNow()}</div>
       </div>
 
-      <RightOutlined style={{ color: "#bfbfbf", fontSize: 12 }} />
+      <RightOutlined
+        style={{ color: "#bfbfbf", fontSize: 12 }}
+      />
     </div>
   );
 };
@@ -198,6 +276,8 @@ const RequestRow: React.FC<{ item: TicketProps; isLast: boolean }> = ({
 
 const OpenRequestsPanel: React.FC = () => {
   const { userId } = useAuth();
+
+  const navigate = useNavigate();
 
   const filters = useMemo(
     () => ({
@@ -209,8 +289,6 @@ const OpenRequestsPanel: React.FC = () => {
 
   const { ticket, loading } = useTickets(filters);
 
-  // Guard against ticket being undefined/null before the hook resolves,
-  // even outside the `loading` window (e.g. initial render, refetches).
   const tickets = ticket ?? [];
 
   const statusCounts = useMemo(() => {
@@ -218,6 +296,7 @@ const OpenRequestsPanel: React.FC = () => {
       Pending: 0,
       Assigned: 0,
       Processing: 0,
+      "For Closing": 0,
     };
 
     tickets.forEach((item) => {
@@ -257,6 +336,15 @@ const OpenRequestsPanel: React.FC = () => {
         iconColor: "#9B51E0",
         valueColor: "#9B51E0",
       },
+      {
+        icon: <FileTextOutlined />,
+        value: statusCounts["For Closing"],
+        label: "For Closing",
+        bgColor: "#EAF6EE",
+        iconBgColor: "#D5EEDD",
+        iconColor: "#36A269",
+        valueColor: "#36A269",
+      },
     ],
     [statusCounts]
   );
@@ -273,24 +361,62 @@ const OpenRequestsPanel: React.FC = () => {
       }}
     >
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <FileTextOutlined style={{ color: "#2F80ED", fontSize: 18 }} />
-          <span style={{ fontWeight: 700, fontSize: 16, color: "#222" }}>Open Requests</span>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 18,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <FileTextOutlined
+            style={{ color: "#2F80ED", fontSize: 18 }}
+          />
+
+          <span
+            style={{
+              fontWeight: 700,
+              fontSize: 16,
+              color: "#222",
+            }}
+          >
+            Open Requests
+          </span>
+
           <Badge count={tickets.length} />
         </div>
+
         <a
           href="#"
-          style={{ fontSize: 13, color: "#2F80ED", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate("/tickets");
+          }}
+          style={{
+            fontSize: 13,
+            color: "#2F80ED",
+            fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
         >
-          View all requests <RightOutlined style={{ fontSize: 10 }} />
+          View all requests
+          <RightOutlined style={{ fontSize: 10 }} />
         </a>
       </div>
 
       {/* Stat cards */}
-      <Row gutter={16} style={{ marginBottom: 8 }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 8 }}>
         {stats.map((stat, idx) => (
-          <Col xs={24} sm={8} key={idx}>
+          <Col xs={24} sm={12} lg={6} key={idx}>
             <StatCard {...stat} />
           </Col>
         ))}
@@ -299,7 +425,11 @@ const OpenRequestsPanel: React.FC = () => {
       {/* Request list */}
       <div style={{ marginTop: 8 }}>
         {tickets.map((item, idx) => (
-          <RequestRow key={item.id} item={item} isLast={idx === tickets.length - 1} />
+          <RequestRow
+            key={item.id}
+            item={item}
+            isLast={idx === tickets.length - 1}
+          />
         ))}
       </div>
     </div>
